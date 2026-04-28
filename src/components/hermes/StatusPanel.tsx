@@ -193,7 +193,7 @@ export function StatusPanel({ state }: StatusPanelProps) {
           >
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-status-working animate-pulse" />
-              Live task
+              งานที่กำลังทำ
             </h3>
             <ActiveTaskCard task={state.activeTask} />
           </motion.div>
