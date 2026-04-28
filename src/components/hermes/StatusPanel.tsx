@@ -202,7 +202,7 @@ export function StatusPanel({ state }: StatusPanelProps) {
 
       <div>
         <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-          Recent tasks
+          งานล่าสุด
         </h3>
         <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
           <AnimatePresence initial={false}>
