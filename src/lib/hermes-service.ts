@@ -159,7 +159,7 @@ class MockHermesServiceImpl implements HermesService {
       this.emit({ type: "status", status: "success", message: plan.result });
 
       this.schedule(() => {
-        this.emit({ type: "status", status: "idle", message: "Ready for the next task ☕" });
+        this.emit({ type: "status", status: "idle", message: "พร้อมรับงานต่อไปแล้วครับ ☕" });
       }, 2500);
     }, elapsed);
   }
