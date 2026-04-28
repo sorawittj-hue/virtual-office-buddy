@@ -119,7 +119,7 @@ class MockHermesServiceImpl implements HermesService {
     };
 
     this.emit({ type: "command", command });
-    this.emit({ type: "status", status: "working", message: "On it, Boss! Working on this now…" });
+    this.emit({ type: "status", status: "working", message: "รับทราบครับเจ้านาย! กำลังจัดการให้เลย…" });
     this.emit({ type: "task-start", task });
 
     // Stream each step: running -> done
