@@ -122,8 +122,8 @@ export function Office() {
         </div>
 
         <footer className="mt-6 text-center text-xs text-muted-foreground">
-          Mock service in <code className="px-1 rounded bg-muted">src/lib/hermes-service.ts</code>
-          {" — "}swap with WebSocket / API for real Hermes backend.
+          ระบบจำลองอยู่ใน <code className="px-1 rounded bg-muted">src/lib/hermes-service.ts</code>
+          {" — "}เปลี่ยนเป็น WebSocket / API เพื่อเชื่อมต่อ Hermes จริงได้ทันที
         </footer>
       </div>
     </div>
