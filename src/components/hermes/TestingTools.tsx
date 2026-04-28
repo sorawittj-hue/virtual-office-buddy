@@ -7,10 +7,10 @@ interface TestingToolsProps {
 }
 
 const tools = [
-  { command: "Send Email", icon: Mail },
-  { command: "Search Data", icon: Search },
-  { command: "Schedule Meeting", icon: CalendarPlus },
-  { command: "Generate Report", icon: FileBarChart },
+  { command: "ส่งอีเมล", icon: Mail },
+  { command: "ค้นหาข้อมูล", icon: Search },
+  { command: "นัดประชุม", icon: CalendarPlus },
+  { command: "สร้างรายงาน", icon: FileBarChart },
 ];
 
 export function TestingTools({ onSimulate, disabled }: TestingToolsProps) {
