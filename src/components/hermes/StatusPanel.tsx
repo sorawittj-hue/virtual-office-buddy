@@ -95,7 +95,7 @@ function ActiveTaskCard({ task }: { task: TaskLogEntry }) {
           {isComplete ? (
             <>
               <Sparkles className="w-3 h-3 text-status-success" />
-              done
+              เสร็จแล้ว
             </>
           ) : (
             <>
