@@ -82,13 +82,13 @@ export function Office() {
                 <ChatBubble
                   side="left"
                   variant="boss"
-                  label="Boss · via Telegram"
+                  label="เจ้านาย · ผ่าน Telegram"
                   message={hermes.bossMessage}
                 />
                 <ChatBubble
                   side="right"
                   variant="hermes"
-                  label="Hermes"
+                  label="เฮอร์มีส"
                   message={hermes.hermesMessage}
                 />
               </div>
