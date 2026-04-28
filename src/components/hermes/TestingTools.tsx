@@ -24,10 +24,10 @@ export function TestingTools({ onSimulate, disabled }: TestingToolsProps) {
       <div className="flex items-center gap-2 px-2 pb-2 border-b border-border mb-2">
         <FlaskConical className="w-4 h-4 text-accent" />
         <span className="text-xs font-bold uppercase tracking-wider text-card-foreground">
-          Testing tools
+          เครื่องมือทดสอบ
         </span>
         <span className="ml-auto text-[10px] text-muted-foreground">
-          Mock Telegram webhooks
+          จำลอง Webhook จาก Telegram
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
