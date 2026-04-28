@@ -21,16 +21,16 @@ export function Office() {
             </div>
             <div>
               <h1 className="text-xl font-black text-foreground tracking-tight">
-                Hermes · Virtual Office
+                เฮอร์มีส · ออฟฟิศเสมือน
               </h1>
               <p className="text-xs text-muted-foreground">
-                Your AI employee, hard at work.
+                พนักงาน AI ของคุณ กำลังตั้งใจทำงาน
               </p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border shadow-soft text-xs font-medium text-card-foreground">
             <span className="w-2 h-2 rounded-full bg-status-success animate-pulse" />
-            Telegram channel live
+            ช่อง Telegram ออนไลน์
           </div>
         </header>
 
