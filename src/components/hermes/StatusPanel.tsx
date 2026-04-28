@@ -148,8 +148,8 @@ export function StatusPanel({ state }: StatusPanelProps) {
     <aside className="w-full lg:w-80 shrink-0 rounded-3xl bg-card border border-border shadow-pop p-5 flex flex-col gap-4">
       <header className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-card-foreground">Hermes Agent</h2>
-          <p className="text-xs text-muted-foreground">Live status dashboard</p>
+          <h2 className="text-base font-bold text-card-foreground">เอเจนต์เฮอร์มีส</h2>
+          <p className="text-xs text-muted-foreground">แดชบอร์ดสถานะแบบเรียลไทม์</p>
         </div>
         <div className="relative">
           <span className="absolute inset-0 rounded-full bg-status-success/40 animate-ping" />
