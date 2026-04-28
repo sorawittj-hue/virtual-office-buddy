@@ -16,17 +16,17 @@ interface StatusPanelProps {
 
 const statusMeta: Record<HermesStatus, { label: string; color: string; icon: React.ReactNode }> = {
   idle: {
-    label: "Idle",
+    label: "ว่าง",
     color: "bg-status-idle",
     icon: <Activity className="w-3.5 h-3.5" />,
   },
   working: {
-    label: "Working",
+    label: "กำลังทำงาน",
     color: "bg-status-working",
     icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
   },
   success: {
-    label: "Success",
+    label: "สำเร็จ",
     color: "bg-status-success",
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
   },
