@@ -6,7 +6,9 @@ interface HermesCharacterProps {
   status: HermesStatus;
 }
 
-const bodyVariants = {
+import type { Variants } from "framer-motion";
+
+const bodyVariants: Variants = {
   idle: {
     y: [0, -4, 0],
     rotate: 0,
@@ -22,7 +24,7 @@ const bodyVariants = {
     rotate: [0, -6, 6, 0],
     transition: { duration: 0.7, ease: "easeOut" },
   },
-} as const;
+};
 
 export function HermesCharacter({ status }: HermesCharacterProps) {
   const monitorClass =
