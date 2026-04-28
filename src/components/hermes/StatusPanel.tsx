@@ -212,7 +212,7 @@ export function StatusPanel({ state }: StatusPanelProps) {
                 animate={{ opacity: 1 }}
                 className="text-xs text-muted-foreground italic px-3 py-4 rounded-xl border border-dashed border-border text-center"
               >
-                No tasks yet — try the testing tools below.
+                ยังไม่มีงาน — ลองใช้เครื่องมือทดสอบด้านล่างได้เลย
               </motion.div>
             )}
             {history.map((entry) => (
