@@ -5,7 +5,7 @@ import type { HermesState, TaskLogEntry } from "@/lib/hermes-types";
 const initialState: HermesState = {
   status: "idle",
   bossMessage: null,
-  hermesMessage: "Ready for the next task ☕",
+  hermesMessage: "พร้อมรับงานต่อไปแล้วครับ ☕",
   connection: "online",
   channel: "Telegram",
   log: [],
