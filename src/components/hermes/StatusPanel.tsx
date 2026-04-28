@@ -229,7 +229,7 @@ export function StatusPanel({ state }: StatusPanelProps) {
                   <Send className="w-3 h-3" />
                   {entry.command}
                   <span className="ml-auto text-muted-foreground font-medium">
-                    {entry.steps.length} steps
+                    {entry.steps.length} ขั้นตอน
                   </span>
                 </div>
                 <div className="mt-1 flex items-start gap-1.5 text-[11px] text-muted-foreground">
