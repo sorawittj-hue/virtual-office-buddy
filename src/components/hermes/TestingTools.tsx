@@ -41,7 +41,7 @@ export function TestingTools({ onSimulate, disabled }: TestingToolsProps) {
             className="group flex flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-background hover:bg-secondary px-3 py-3 text-xs font-semibold text-card-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Icon className="w-4 h-4 text-primary group-hover:text-accent transition-colors" />
-            <span>Simulate: {command}</span>
+            <span>จำลอง: {command}</span>
           </motion.button>
         ))}
       </div>
