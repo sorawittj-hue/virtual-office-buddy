@@ -5,11 +5,11 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Hermes · Virtual Office" },
+      { title: "เฮอร์มีส · ออฟฟิศเสมือน" },
       {
         name: "description",
         content:
-          "A cozy virtual office where Hermes, your AI employee, takes commands from the Boss via Telegram.",
+          "ออฟฟิศเสมือนสุดน่ารัก ที่เฮอร์มีส พนักงาน AI ของคุณ คอยรับคำสั่งจากเจ้านายผ่าน Telegram",
       },
     ],
   }),

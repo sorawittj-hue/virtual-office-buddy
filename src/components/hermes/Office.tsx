@@ -21,16 +21,16 @@ export function Office() {
             </div>
             <div>
               <h1 className="text-xl font-black text-foreground tracking-tight">
-                Hermes · Virtual Office
+                เฮอร์มีส · ออฟฟิศเสมือน
               </h1>
               <p className="text-xs text-muted-foreground">
-                Your AI employee, hard at work.
+                พนักงาน AI ของคุณ กำลังตั้งใจทำงาน
               </p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border shadow-soft text-xs font-medium text-card-foreground">
             <span className="w-2 h-2 rounded-full bg-status-success animate-pulse" />
-            Telegram channel live
+            ช่อง Telegram ออนไลน์
           </div>
         </header>
 
@@ -82,13 +82,13 @@ export function Office() {
                 <ChatBubble
                   side="left"
                   variant="boss"
-                  label="Boss · via Telegram"
+                  label="เจ้านาย · ผ่าน Telegram"
                   message={hermes.bossMessage}
                 />
                 <ChatBubble
                   side="right"
                   variant="hermes"
-                  label="Hermes"
+                  label="เฮอร์มีส"
                   message={hermes.hermesMessage}
                 />
               </div>
@@ -122,8 +122,8 @@ export function Office() {
         </div>
 
         <footer className="mt-6 text-center text-xs text-muted-foreground">
-          Mock service in <code className="px-1 rounded bg-muted">src/lib/hermes-service.ts</code>
-          {" — "}swap with WebSocket / API for real Hermes backend.
+          ระบบจำลองอยู่ใน <code className="px-1 rounded bg-muted">src/lib/hermes-service.ts</code>
+          {" — "}เปลี่ยนเป็น WebSocket / API เพื่อเชื่อมต่อ Hermes จริงได้ทันที
         </footer>
       </div>
     </div>

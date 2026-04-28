@@ -57,7 +57,7 @@ export function BossCharacter() {
         </div>
         {/* Nameplate */}
         <div className="absolute bottom-2 right-3 px-2 py-1 rounded-md bg-card border border-border text-[10px] font-bold tracking-wide text-boss shadow-soft">
-          THE BOSS
+          เจ้านาย
         </div>
       </div>
     </div>

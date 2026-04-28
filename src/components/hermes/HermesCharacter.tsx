@@ -139,7 +139,7 @@ export function HermesCharacter({ status }: HermesCharacterProps) {
 
         {/* Nameplate */}
         <div className="absolute bottom-2 left-3 px-2 py-1 rounded-md bg-card border border-border text-[10px] font-bold tracking-wide text-hermes shadow-soft">
-          HERMES · AI EMPLOYEE
+          เฮอร์มีส · พนักงาน AI
         </div>
       </div>
     </div>

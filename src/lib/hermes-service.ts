@@ -25,51 +25,51 @@ interface CommandPlan {
 }
 
 const commandPlans: Record<string, CommandPlan> = {
-  "Send Email": {
+  "ส่งอีเมล": {
     steps: [
-      { label: "Parsing recipient & intent", duration: 600 },
-      { label: "Drafting email body", detail: "Using friendly tone", duration: 900 },
-      { label: "Reviewing for typos", duration: 500 },
-      { label: "Sending via SMTP", detail: "to inbox@example.com", duration: 700 },
+      { label: "วิเคราะห์ผู้รับและจุดประสงค์", duration: 600 },
+      { label: "ร่างเนื้อหาอีเมล", detail: "ใช้น้ำเสียงเป็นกันเอง", duration: 900 },
+      { label: "ตรวจทานคำผิด", duration: 500 },
+      { label: "ส่งผ่าน SMTP", detail: "ไปยัง inbox@example.com", duration: 700 },
     ],
-    result: "Email sent! 📬 Drafted, polished, and delivered.",
+    result: "ส่งอีเมลเรียบร้อย! 📬 ร่าง ตรวจทาน และจัดส่งครบถ้วน",
   },
-  "Search Data": {
+  "ค้นหาข้อมูล": {
     steps: [
-      { label: "Connecting to data sources", duration: 500 },
-      { label: "Running query", detail: "3 indexes scanned", duration: 800 },
-      { label: "Ranking 12 results", duration: 600 },
-      { label: "Summarizing findings", duration: 700 },
+      { label: "เชื่อมต่อแหล่งข้อมูล", duration: 500 },
+      { label: "กำลังค้นหา", detail: "สแกน 3 ดัชนี", duration: 800 },
+      { label: "จัดอันดับผลลัพธ์ 12 รายการ", duration: 600 },
+      { label: "สรุปสิ่งที่พบ", duration: 700 },
     ],
-    result: "Found 12 relevant records and summarized them for you.",
+    result: "พบข้อมูลที่เกี่ยวข้อง 12 รายการ และสรุปให้เรียบร้อยแล้ว",
   },
-  "Schedule Meeting": {
+  "นัดประชุม": {
     steps: [
-      { label: "Checking calendar availability", duration: 700 },
-      { label: "Finding common slot", detail: "3 attendees", duration: 700 },
-      { label: "Booking room", duration: 500 },
-      { label: "Sending invites", duration: 600 },
+      { label: "ตรวจสอบปฏิทินว่าง", duration: 700 },
+      { label: "หาช่วงเวลาที่ตรงกัน", detail: "ผู้เข้าร่วม 3 คน", duration: 700 },
+      { label: "จองห้องประชุม", duration: 500 },
+      { label: "ส่งคำเชิญ", duration: 600 },
     ],
-    result: "Meeting booked for tomorrow at 3:00 PM ✅",
+    result: "นัดประชุมเรียบร้อย พรุ่งนี้เวลา 15:00 น. ✅",
   },
-  "Generate Report": {
+  "สร้างรายงาน": {
     steps: [
-      { label: "Pulling Q-data from warehouse", duration: 700 },
-      { label: "Crunching metrics", duration: 900 },
-      { label: "Rendering charts", duration: 700 },
-      { label: "Saving PDF to Drive", duration: 600 },
+      { label: "ดึงข้อมูลรายไตรมาสจากคลัง", duration: 700 },
+      { label: "ประมวลผลตัวชี้วัด", duration: 900 },
+      { label: "เรนเดอร์กราฟ", duration: 700 },
+      { label: "บันทึก PDF ลง Drive", duration: 600 },
     ],
-    result: "Quarterly report generated and saved to Drive.",
+    result: "สร้างรายงานรายไตรมาสและบันทึกลง Drive เรียบร้อยแล้ว",
   },
 };
 
 const defaultPlan = (command: string): CommandPlan => ({
   steps: [
-    { label: "Understanding request", duration: 600 },
-    { label: "Working on it", detail: command, duration: 1200 },
-    { label: "Wrapping up", duration: 600 },
+    { label: "ทำความเข้าใจคำสั่ง", duration: 600 },
+    { label: "กำลังดำเนินการ", detail: command, duration: 1200 },
+    { label: "กำลังสรุปผล", duration: 600 },
   ],
-  result: `Done! Completed: "${command}"`,
+  result: `เสร็จเรียบร้อย! ดำเนินการ: "${command}"`,
 });
 
 class MockHermesServiceImpl implements HermesService {
@@ -119,7 +119,7 @@ class MockHermesServiceImpl implements HermesService {
     };
 
     this.emit({ type: "command", command });
-    this.emit({ type: "status", status: "working", message: "On it, Boss! Working on this now…" });
+    this.emit({ type: "status", status: "working", message: "รับทราบครับเจ้านาย! กำลังจัดการให้เลย…" });
     this.emit({ type: "task-start", task });
 
     // Stream each step: running -> done
@@ -159,7 +159,7 @@ class MockHermesServiceImpl implements HermesService {
       this.emit({ type: "status", status: "success", message: plan.result });
 
       this.schedule(() => {
-        this.emit({ type: "status", status: "idle", message: "Ready for the next task ☕" });
+        this.emit({ type: "status", status: "idle", message: "พร้อมรับงานต่อไปแล้วครับ ☕" });
       }, 2500);
     }, elapsed);
   }

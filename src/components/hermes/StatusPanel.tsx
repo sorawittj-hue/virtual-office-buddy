@@ -16,17 +16,17 @@ interface StatusPanelProps {
 
 const statusMeta: Record<HermesStatus, { label: string; color: string; icon: React.ReactNode }> = {
   idle: {
-    label: "Idle",
+    label: "ว่าง",
     color: "bg-status-idle",
     icon: <Activity className="w-3.5 h-3.5" />,
   },
   working: {
-    label: "Working",
+    label: "กำลังทำงาน",
     color: "bg-status-working",
     icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
   },
   success: {
-    label: "Success",
+    label: "สำเร็จ",
     color: "bg-status-success",
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
   },
@@ -95,7 +95,7 @@ function ActiveTaskCard({ task }: { task: TaskLogEntry }) {
           {isComplete ? (
             <>
               <Sparkles className="w-3 h-3 text-status-success" />
-              done
+              เสร็จแล้ว
             </>
           ) : (
             <>
@@ -148,8 +148,8 @@ export function StatusPanel({ state }: StatusPanelProps) {
     <aside className="w-full lg:w-80 shrink-0 rounded-3xl bg-card border border-border shadow-pop p-5 flex flex-col gap-4">
       <header className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-card-foreground">Hermes Agent</h2>
-          <p className="text-xs text-muted-foreground">Live status dashboard</p>
+          <h2 className="text-base font-bold text-card-foreground">เอเจนต์เฮอร์มีส</h2>
+          <p className="text-xs text-muted-foreground">แดชบอร์ดสถานะแบบเรียลไทม์</p>
         </div>
         <div className="relative">
           <span className="absolute inset-0 rounded-full bg-status-success/40 animate-ping" />
@@ -161,17 +161,17 @@ export function StatusPanel({ state }: StatusPanelProps) {
         <div className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2">
           <div className="flex items-center gap-2 text-xs font-medium text-card-foreground">
             <Radio className="w-3.5 h-3.5 text-primary" />
-            Connection
+            การเชื่อมต่อ
           </div>
           <span className="text-xs font-semibold text-status-success">
-            Online · {state.channel}
+            ออนไลน์ · {state.channel}
           </span>
         </div>
 
         <div className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2">
           <div className="flex items-center gap-2 text-xs font-medium text-card-foreground">
             <Activity className="w-3.5 h-3.5 text-primary" />
-            Current status
+            สถานะปัจจุบัน
           </div>
           <span
             className={`inline-flex items-center gap-1.5 text-xs font-semibold text-card px-2 py-0.5 rounded-full ${meta.color}`}
@@ -193,7 +193,7 @@ export function StatusPanel({ state }: StatusPanelProps) {
           >
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-status-working animate-pulse" />
-              Live task
+              งานที่กำลังทำ
             </h3>
             <ActiveTaskCard task={state.activeTask} />
           </motion.div>
@@ -202,7 +202,7 @@ export function StatusPanel({ state }: StatusPanelProps) {
 
       <div>
         <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-          Recent tasks
+          งานล่าสุด
         </h3>
         <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
           <AnimatePresence initial={false}>
@@ -212,7 +212,7 @@ export function StatusPanel({ state }: StatusPanelProps) {
                 animate={{ opacity: 1 }}
                 className="text-xs text-muted-foreground italic px-3 py-4 rounded-xl border border-dashed border-border text-center"
               >
-                No tasks yet — try the testing tools below.
+                ยังไม่มีงาน — ลองใช้เครื่องมือทดสอบด้านล่างได้เลย
               </motion.div>
             )}
             {history.map((entry) => (
@@ -229,7 +229,7 @@ export function StatusPanel({ state }: StatusPanelProps) {
                   <Send className="w-3 h-3" />
                   {entry.command}
                   <span className="ml-auto text-muted-foreground font-medium">
-                    {entry.steps.length} steps
+                    {entry.steps.length} ขั้นตอน
                   </span>
                 </div>
                 <div className="mt-1 flex items-start gap-1.5 text-[11px] text-muted-foreground">

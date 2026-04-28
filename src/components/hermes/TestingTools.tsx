@@ -7,10 +7,10 @@ interface TestingToolsProps {
 }
 
 const tools = [
-  { command: "Send Email", icon: Mail },
-  { command: "Search Data", icon: Search },
-  { command: "Schedule Meeting", icon: CalendarPlus },
-  { command: "Generate Report", icon: FileBarChart },
+  { command: "ส่งอีเมล", icon: Mail },
+  { command: "ค้นหาข้อมูล", icon: Search },
+  { command: "นัดประชุม", icon: CalendarPlus },
+  { command: "สร้างรายงาน", icon: FileBarChart },
 ];
 
 export function TestingTools({ onSimulate, disabled }: TestingToolsProps) {
@@ -24,10 +24,10 @@ export function TestingTools({ onSimulate, disabled }: TestingToolsProps) {
       <div className="flex items-center gap-2 px-2 pb-2 border-b border-border mb-2">
         <FlaskConical className="w-4 h-4 text-accent" />
         <span className="text-xs font-bold uppercase tracking-wider text-card-foreground">
-          Testing tools
+          เครื่องมือทดสอบ
         </span>
         <span className="ml-auto text-[10px] text-muted-foreground">
-          Mock Telegram webhooks
+          จำลอง Webhook จาก Telegram
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -41,7 +41,7 @@ export function TestingTools({ onSimulate, disabled }: TestingToolsProps) {
             className="group flex flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-background hover:bg-secondary px-3 py-3 text-xs font-semibold text-card-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Icon className="w-4 h-4 text-primary group-hover:text-accent transition-colors" />
-            <span>Simulate: {command}</span>
+            <span>จำลอง: {command}</span>
           </motion.button>
         ))}
       </div>
