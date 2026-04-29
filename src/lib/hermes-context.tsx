@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 import { hermesService } from "./hermes-service";
 import { WebSocketHermesService } from "./ws-hermes-service";
 import type { HermesService } from "./ws-hermes-service";
@@ -7,7 +7,7 @@ import type { WsConnectionState } from "./ws-hermes-service";
 interface HermesServiceContextValue {
   service: HermesService;
   wsState: WsConnectionState | null;
-  connectWs: (url: string) => void;
+  connectWs: (url: string, token?: string) => void;
   disconnectWs: () => void;
 }
 
@@ -23,14 +23,32 @@ export function HermesServiceProvider({ children }: { children: React.ReactNode 
   const [wsState, setWsState] = useState<WsConnectionState | null>(null);
   const wsRef = useRef<WebSocketHermesService | null>(null);
 
-  const connectWs = useCallback((url: string) => {
+  // Auto-reconnect on mount if saved URL exists
+  useEffect(() => {
+    const savedUrl = localStorage.getItem("hermes-ws-url");
+    const savedToken = localStorage.getItem("hermes-ws-token") ?? undefined;
+    if (savedUrl) {
+      const ws = new WebSocketHermesService(savedUrl, savedToken);
+      ws.subscribeState(setWsState);
+      ws.connect();
+      wsRef.current = ws;
+      setService(ws);
+    }
+  }, []);
+
+  const connectWs = useCallback((url: string, token?: string) => {
     wsRef.current?.disconnect();
-    const ws = new WebSocketHermesService(url);
+    const ws = new WebSocketHermesService(url, token);
     ws.subscribeState(setWsState);
     ws.connect();
     wsRef.current = ws;
     setService(ws);
     localStorage.setItem("hermes-ws-url", url);
+    if (token) {
+      localStorage.setItem("hermes-ws-token", token);
+    } else {
+      localStorage.removeItem("hermes-ws-token");
+    }
   }, []);
 
   const disconnectWs = useCallback(() => {
@@ -39,6 +57,7 @@ export function HermesServiceProvider({ children }: { children: React.ReactNode 
     setWsState(null);
     setService(hermesService);
     localStorage.removeItem("hermes-ws-url");
+    localStorage.removeItem("hermes-ws-token");
   }, []);
 
   return (

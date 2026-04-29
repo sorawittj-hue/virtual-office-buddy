@@ -8,18 +8,72 @@
  *  2. รับคำสั่งจาก Telegram bot (polling)
  *  3. ส่ง real-time events ไปที่ Web App ทุก step
  *  4. ส่งผลลัพธ์กลับ Telegram
+ *
+ * ความปลอดภัย:
+ *  - ALLOWED_CHAT_IDS  จำกัด Telegram user ที่อนุญาต
+ *  - WS_SECRET         ยืนยันตัวตน WebSocket client (?token=...)
+ *  - Rate limiting     จำกัด RATE_LIMIT_PER_MIN คำสั่ง/นาที ต่อ chat
+ *
+ * AI จริง (optional):
+ *  - ถ้าตั้ง ANTHROPIC_API_KEY จะใช้ Claude วางแผนและตอบ
+ *  - ถ้าไม่ตั้ง ใช้ hardcoded fallback plans
  */
 
 import TelegramBot from "node-telegram-bot-api";
 import { WebSocketServer, WebSocket } from "ws";
 import { randomUUID } from "crypto";
 
+// ─── Config ────────────────────────────────────────────────────────────────
+
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WS_PORT = Number(process.env.WS_PORT ?? 18789);
+const WS_SECRET = process.env.WS_SECRET ?? "";
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
+const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 5);
+
+// Allowed Telegram chat IDs (comma-separated). Empty = allow all — DEV ONLY
+const ALLOWED_CHAT_IDS = process.env.ALLOWED_CHAT_IDS
+  ? new Set(process.env.ALLOWED_CHAT_IDS.split(",").map((s) => s.trim()))
+  : null;
 
 if (!TOKEN) {
   console.error("❌ ไม่พบ TELEGRAM_BOT_TOKEN ใน .env");
   process.exit(1);
+}
+
+function log(msg) {
+  console.log(`[${new Date().toISOString()}] ${msg}`);
+}
+
+if (!WS_SECRET) {
+  log("⚠️  WS_SECRET ไม่ได้ตั้งค่า — WebSocket จะไม่มีการยืนยันตัวตน (ไม่ปลอดภัยใน production)");
+}
+if (!ALLOWED_CHAT_IDS) {
+  log("⚠️  ALLOWED_CHAT_IDS ไม่ได้ตั้งค่า — Bot รับคำสั่งจากทุก Telegram user (ไม่ปลอดภัยใน production)");
+}
+
+// ─── Anthropic AI (optional) ───────────────────────────────────────────────
+
+let anthropic = null;
+if (ANTHROPIC_API_KEY) {
+  const { default: Anthropic } = await import("@anthropic-ai/sdk");
+  anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  log("🤖 Claude AI พร้อมแล้ว (claude-sonnet-4-6)");
+}
+
+// ─── Rate limiting ─────────────────────────────────────────────────────────
+
+const rateLimits = new Map(); // chatId -> { count, resetAt }
+
+function checkRateLimit(chatId) {
+  const now = Date.now();
+  const key = String(chatId);
+  let limit = rateLimits.get(key) ?? { count: 0, resetAt: now + 60_000 };
+  if (now > limit.resetAt) limit = { count: 0, resetAt: now + 60_000 };
+  if (limit.count >= RATE_LIMIT_PER_MIN) return false;
+  limit.count++;
+  rateLimits.set(key, limit);
+  return true;
 }
 
 // ─── WebSocket server ───────────────────────────────────────────────────────
@@ -27,21 +81,31 @@ if (!TOKEN) {
 const wss = new WebSocketServer({ host: "0.0.0.0", port: WS_PORT });
 const clients = new Set();
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, req) => {
+  // Auth check — reject if WS_SECRET is set and token doesn't match
+  if (WS_SECRET) {
+    const params = new URL(req.url ?? "/", "http://localhost").searchParams;
+    if (params.get("token") !== WS_SECRET) {
+      ws.close(4001, "Unauthorized");
+      log(`🚫 WebSocket: ปฏิเสธการเชื่อมต่อ (token ไม่ถูกต้อง) จาก ${req.socket.remoteAddress}`);
+      return;
+    }
+  }
+
   clients.add(ws);
-  console.log(`🔌 Web App เชื่อมต่อแล้ว (${clients.size} clients)`);
+  log(`🔌 Web App เชื่อมต่อแล้ว (${clients.size} clients) จาก ${req.socket.remoteAddress}`);
   broadcast({ type: "status", status: "idle", message: "พร้อมรับงานครับ ☕" });
 
   ws.on("message", (data) => {
     try {
       const msg = JSON.parse(data.toString());
-      if (msg.type === "ping") ws.send(JSON.stringify({ type: "pong" }));
+      if (msg.type === "ping") ws.send(JSON.stringify({ type: "pong", ts: Date.now() }));
     } catch {}
   });
 
   ws.on("close", () => {
     clients.delete(ws);
-    console.log(`🔌 Web App ตัดการเชื่อมต่อ (เหลือ ${clients.size} clients)`);
+    log(`🔌 Web App ตัดการเชื่อมต่อ (เหลือ ${clients.size} clients)`);
   });
 });
 
@@ -56,7 +120,45 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// ─── Command plans ─────────────────────────────────────────────────────────
+// ─── AI Plan generation ─────────────────────────────────────────────────────
+
+const AI_SYSTEM_PROMPT = `คุณคือ Hermes ผู้ช่วย AI ออฟฟิศที่ฉลาดและทำงานเก่ง
+เมื่อได้รับคำสั่งงาน ให้วางแผนขั้นตอนดำเนินการและตอบในรูปแบบ JSON เท่านั้น (ไม่มีข้อความอื่นนอกจาก JSON)
+
+รูปแบบ JSON ที่ต้องตอบ:
+{
+  "steps": [
+    {"label": "ชื่อขั้นตอนสั้นๆ", "detail": "รายละเอียดเพิ่มเติมหรือ null", "duration": 800},
+    {"label": "ขั้นตอนที่ 2", "detail": null, "duration": 600}
+  ],
+  "result": "สรุปผลลัพธ์ที่น่าพอใจ พร้อม emoji เหมาะสม"
+}
+
+กฎ:
+- steps: 3-5 ขั้นตอน สมเหตุสมผลกับงานที่ได้รับ
+- duration: 400-1200 ms (สมเหตุสมผลตามความยาก)
+- ใช้ภาษาไทย
+- result: ประโยคเดียว กระชับ บอกว่าทำอะไรเสร็จ`;
+
+async function getAIPlan(command) {
+  if (!anthropic) return null;
+  try {
+    const msg = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 512,
+      system: [{ type: "text", text: AI_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+      messages: [{ role: "user", content: `งาน: ${command}` }],
+    });
+    const text = msg.content[0].type === "text" ? msg.content[0].text : "";
+    const clean = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    return JSON.parse(clean);
+  } catch (err) {
+    log(`⚠️  AI plan ล้มเหลว: ${err.message} — ใช้ fallback`);
+    return null;
+  }
+}
+
+// ─── Fallback command plans ────────────────────────────────────────────────
 
 const commandPlans = {
   "ส่งอีเมล": {
@@ -144,76 +246,85 @@ function defaultPlan(command) {
   };
 }
 
+// ─── Concurrent task guard ─────────────────────────────────────────────────
+
+const activeTasks = new Set(); // chatId strings currently running
+
 // ─── Execute command ────────────────────────────────────────────────────────
 
 async function executeCommand(command, chatId) {
-  const plan = commandPlans[command] ?? defaultPlan(command);
-  const taskId = randomUUID();
-  const now = Date.now();
+  const chatKey = String(chatId);
 
-  const steps = plan.steps.map((s) => ({
-    id: randomUUID(),
-    label: s.label,
-    detail: s.detail ?? undefined,
-    status: "pending",
-  }));
-
-  // Broadcast to web app
-  broadcast({ type: "command", command });
-  broadcast({ type: "status", status: "working", message: "รับทราบครับเจ้านาย! กำลังจัดการให้เลย…" });
-  broadcast({
-    type: "task-start",
-    task: { id: taskId, command, result: "", status: "working", timestamp: now, startedAt: now, steps },
-  });
-
-  // Notify Telegram
-  const statusMsg = await bot.sendMessage(
-    chatId,
-    `⚡ *รับทราบครับ!*\n\nกำลังดำเนินการ: *${command}*\n\n${steps.map((s) => `⬜ ${s.label}`).join("\n")}`,
-    { parse_mode: "Markdown" }
-  );
-
-  // Execute each step
-  const completedSteps = [];
-  for (let i = 0; i < plan.steps.length; i++) {
-    const planStep = plan.steps[i];
-    const step = steps[i];
-
-    // Mark running
-    await sleep(planStep.duration * 0.7);
-    broadcast({ type: "task-step", taskId, step: { ...step, status: "running", startedAt: Date.now() } });
-    broadcast({ type: "status", status: "working", message: `${step.label}…` });
-
-    // Mark done
-    await sleep(planStep.duration * 0.3);
-    broadcast({ type: "task-step", taskId, step: { ...step, status: "done", completedAt: Date.now() } });
-
-    completedSteps.push(step);
-    const remaining = steps.slice(completedSteps.length);
-
-    // Update Telegram message with live progress
-    try {
-      await bot.editMessageText(
-        `⚡ *กำลังดำเนินการ: ${command}*\n\n` +
-          completedSteps.map((s) => `✅ ${s.label}`).join("\n") +
-          (remaining.length > 0
-            ? "\n" + remaining.map((s, ri) => (ri === 0 ? `⏳ ${s.label}` : `⬜ ${s.label}`)).join("\n")
-            : ""),
-        { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: "Markdown" }
-      );
-    } catch {}
+  if (activeTasks.has(chatKey)) {
+    await bot.sendMessage(chatId, "⏳ กำลังดำเนินการอยู่ครับ รอให้เสร็จก่อนนะ");
+    return;
   }
+  activeTasks.add(chatKey);
 
-  // Complete
-  broadcast({ type: "task-complete", taskId, result: plan.result });
-  broadcast({ type: "status", status: "success", message: plan.result });
+  try {
+    let plan = await getAIPlan(command);
+    if (!plan) plan = commandPlans[command] ?? defaultPlan(command);
 
-  // Final Telegram message
-  await bot.sendMessage(chatId, `✅ *เสร็จแล้ว!*\n\n${plan.result}`, { parse_mode: "Markdown" });
+    const taskId = randomUUID();
+    const now = Date.now();
 
-  setTimeout(() => {
-    broadcast({ type: "status", status: "idle", message: "พร้อมรับงานต่อไปแล้วครับ ☕" });
-  }, 2500);
+    const steps = plan.steps.map((s) => ({
+      id: randomUUID(),
+      label: s.label,
+      detail: s.detail ?? undefined,
+      status: "pending",
+    }));
+
+    broadcast({ type: "command", command });
+    broadcast({ type: "status", status: "working", message: "รับทราบครับเจ้านาย! กำลังจัดการให้เลย…" });
+    broadcast({
+      type: "task-start",
+      task: { id: taskId, command, result: "", status: "working", timestamp: now, startedAt: now, steps },
+    });
+
+    const statusMsg = await bot.sendMessage(
+      chatId,
+      `⚡ *รับทราบครับ!*\n\nกำลังดำเนินการ: *${command}*\n\n${steps.map((s) => `⬜ ${s.label}`).join("\n")}`,
+      { parse_mode: "Markdown" }
+    );
+
+    const completedSteps = [];
+    for (let i = 0; i < plan.steps.length; i++) {
+      const planStep = plan.steps[i];
+      const step = steps[i];
+
+      await sleep(planStep.duration * 0.7);
+      broadcast({ type: "task-step", taskId, step: { ...step, status: "running", startedAt: Date.now() } });
+      broadcast({ type: "status", status: "working", message: `${step.label}…` });
+
+      await sleep(planStep.duration * 0.3);
+      broadcast({ type: "task-step", taskId, step: { ...step, status: "done", completedAt: Date.now() } });
+
+      completedSteps.push(step);
+      const remaining = steps.slice(completedSteps.length);
+
+      try {
+        await bot.editMessageText(
+          `⚡ *กำลังดำเนินการ: ${command}*\n\n` +
+            completedSteps.map((s) => `✅ ${s.label}`).join("\n") +
+            (remaining.length > 0
+              ? "\n" + remaining.map((s, ri) => (ri === 0 ? `⏳ ${s.label}` : `⬜ ${s.label}`)).join("\n")
+              : ""),
+          { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: "Markdown" }
+        );
+      } catch {}
+    }
+
+    broadcast({ type: "task-complete", taskId, result: plan.result });
+    broadcast({ type: "status", status: "success", message: plan.result });
+    await bot.sendMessage(chatId, `✅ *เสร็จแล้ว!*\n\n${plan.result}`, { parse_mode: "Markdown" });
+
+    setTimeout(() => {
+      broadcast({ type: "status", status: "idle", message: "พร้อมรับงานต่อไปแล้วครับ ☕" });
+    }, 2500);
+  } finally {
+    activeTasks.delete(chatKey);
+  }
 }
 
 // ─── Telegram bot ───────────────────────────────────────────────────────────
@@ -225,7 +336,15 @@ bot.on("message", async (msg) => {
   const text = msg.text?.trim();
   if (!text) return;
 
-  console.log(`📨 Telegram [${msg.from?.username ?? chatId}]: ${text}`);
+  const username = msg.from?.username ?? String(chatId);
+  log(`📨 Telegram [${username}]: ${text}`);
+
+  // Authorization check
+  if (ALLOWED_CHAT_IDS && !ALLOWED_CHAT_IDS.has(String(chatId))) {
+    await bot.sendMessage(chatId, "⛔ ขออภัย คุณไม่มีสิทธิ์ใช้งาน Hermes ครับ");
+    log(`🚫 ปฏิเสธ [${username}] chatId=${chatId} (ไม่อยู่ใน ALLOWED_CHAT_IDS)`);
+    return;
+  }
 
   if (text === "/start") {
     await bot.sendMessage(
@@ -235,6 +354,7 @@ bot.on("message", async (msg) => {
         Object.keys(commandPlans)
           .map((k) => `• ${k}`)
           .join("\n") +
+        (anthropic ? "\n\n🤖 _Claude AI พร้อมแล้ว — รับงานทุกประเภท!_" : "") +
         `\n\nหรือจะพิมพ์คำสั่งอื่นก็ได้ ผมจะพยายามดำเนินการให้ 😊`,
       { parse_mode: "Markdown" }
     );
@@ -245,7 +365,10 @@ bot.on("message", async (msg) => {
     const count = clients.size;
     await bot.sendMessage(
       chatId,
-      `📊 *สถานะระบบ*\n\n🔌 Web App: ${count > 0 ? `${count} client เชื่อมต่ออยู่` : "ไม่มีการเชื่อมต่อ"}\n🤖 Bot: พร้อมรับงาน`,
+      `📊 *สถานะระบบ*\n\n` +
+        `🔌 Web App: ${count > 0 ? `${count} client เชื่อมต่ออยู่` : "ไม่มีการเชื่อมต่อ"}\n` +
+        `🤖 Bot: พร้อมรับงาน\n` +
+        `🧠 AI: ${anthropic ? "Claude AI เปิดอยู่ ✅" : "Fallback mode"}`,
       { parse_mode: "Markdown" }
     );
     return;
@@ -264,22 +387,56 @@ bot.on("message", async (msg) => {
     return;
   }
 
-  // Execute as command
+  // Rate limit check
+  if (!checkRateLimit(chatId)) {
+    await bot.sendMessage(
+      chatId,
+      `⏱ ส่งคำสั่งเร็วเกินไปครับ รอสักครู่แล้วลองใหม่ (${RATE_LIMIT_PER_MIN} คำสั่ง/นาที)`
+    );
+    log(`⏱  Rate limit [${username}] chatId=${chatId}`);
+    return;
+  }
+
   try {
     await executeCommand(text, chatId);
   } catch (err) {
-    console.error("Error executing command:", err);
+    log(`❌ Error executing command: ${err.message}`);
     await bot.sendMessage(chatId, `❌ เกิดข้อผิดพลาด: ${err.message}`);
     broadcast({ type: "status", status: "error", message: `เกิดข้อผิดพลาด: ${err.message}` });
   }
 });
 
-bot.on("polling_error", (err) => console.error("Polling error:", err.message));
+bot.on("polling_error", (err) => log(`❌ Polling error: ${err.message}`));
 
-console.log(`\n🤖 Hermes Telegram Bridge พร้อมแล้ว!`);
-console.log(`📱 Telegram bot กำลัง polling...`);
-console.log(`🔌 WebSocket server: ws://localhost:${WS_PORT}`);
-console.log(`\nขั้นตอนต่อไป:`);
-console.log(`  1. เปิด Web App → หน้า Gateway`);
-console.log(`  2. เชื่อมต่อ ws://localhost:${WS_PORT}`);
-console.log(`  3. ส่งคำสั่งผ่าน Telegram ได้เลย!\n`);
+// ─── Graceful shutdown ──────────────────────────────────────────────────────
+
+function shutdown(signal) {
+  log(`${signal} received — ปิด bridge อย่างสะอาด...`);
+  bot.stopPolling();
+  wss.close(() => {
+    log("✅ ปิดเรียบร้อยครับ");
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 5000);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+// ─── Startup banner ────────────────────────────────────────────────────────
+
+log(`\n🤖 Hermes Telegram Bridge พร้อมแล้ว!`);
+log(`📱 Telegram bot กำลัง polling...`);
+log(`🔌 WebSocket server: ws://localhost:${WS_PORT}`);
+if (WS_SECRET) log(`🔐 WebSocket auth: เปิดอยู่ (WS_SECRET ตั้งแล้ว)`);
+if (ALLOWED_CHAT_IDS) log(`✅ Allowed chat IDs: ${[...ALLOWED_CHAT_IDS].join(", ")}`);
+log(`⏱  Rate limit: ${RATE_LIMIT_PER_MIN} คำสั่ง/นาที ต่อ chat`);
+log(`\nขั้นตอนต่อไป:`);
+if (WS_SECRET) {
+  log(`  1. เปิด Web App → หน้า Gateway → เชื่อมต่อ ws://localhost:${WS_PORT}`);
+  log(`  2. ใส่ Secret Key: YOUR_WS_SECRET`);
+} else {
+  log(`  1. เปิด Web App → หน้า Gateway`);
+  log(`  2. เชื่อมต่อ ws://localhost:${WS_PORT}`);
+}
+log(`  3. ส่งคำสั่งผ่าน Telegram ได้เลย!\n`);
