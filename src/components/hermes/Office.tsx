@@ -19,11 +19,11 @@ export function Office() {
     <>
       <Toaster position="top-right" richColors toastOptions={{ duration: 4000 }} />
       <div className="min-h-screen bg-gradient-sky">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
 
           {/* Top bar */}
-          <header className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-black text-foreground tracking-tight">Office</h1>
               <span className="text-xs text-muted-foreground">· Virtual Workspace</span>
             </div>
@@ -107,7 +107,7 @@ export function Office() {
               </AnimatePresence>
 
               {/* Agent count */}
-              <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 text-white text-xs font-bold backdrop-blur-sm border border-white/10">
+              <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/70 text-background text-xs font-bold backdrop-blur-sm border border-background/10">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 3 Agents
               </div>
