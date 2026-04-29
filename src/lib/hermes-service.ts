@@ -3,20 +3,13 @@
  *
  * Swap `MockHermesServiceImpl` with a WebSocket / API client later.
  * Anything implementing `HermesService` will plug into the UI without changes.
- *
- * Streaming model:
- *  - emit `task-start` with the full step list (all `pending`) the moment a
- *    command arrives. The UI shows the steps immediately.
- *  - emit `task-step` updates as each step transitions to `running`, then `done`.
- *    The UI can render a live progress feed.
- *  - emit `task-complete` + `log` once the final step finishes.
  */
 import type { HermesEvent, TaskLogEntry, TaskStep } from "./hermes-types";
 
 export interface HermesService {
   subscribe(listener: (event: HermesEvent) => void): () => void;
-  /** Simulate an incoming Telegram command (mock) */
   simulateTelegramWebhook(command: string): void;
+  simulateError(command: string): void;
 }
 
 interface CommandPlan {
@@ -60,6 +53,42 @@ const commandPlans: Record<string, CommandPlan> = {
       { label: "บันทึก PDF ลง Drive", duration: 600 },
     ],
     result: "สร้างรายงานรายไตรมาสและบันทึกลง Drive เรียบร้อยแล้ว",
+  },
+  "ตรวจสอบงาน": {
+    steps: [
+      { label: "ดึง Task list จาก Notion", duration: 500 },
+      { label: "จัดกลุ่มตามความเร่งด่วน", duration: 600 },
+      { label: "ตรวจสอบ deadline ที่ใกล้มา", detail: "3 งานใน 48 ชม.", duration: 700 },
+      { label: "สรุปและแจ้งเตือน", duration: 400 },
+    ],
+    result: "พบ 3 งานเร่งด่วน และ 7 งานปกติ พร้อมแจ้งเตือนเรียบร้อยแล้ว 📋",
+  },
+  "ตอบลูกค้า": {
+    steps: [
+      { label: "อ่านข้อความจากลูกค้า", duration: 400 },
+      { label: "ค้นหาข้อมูลที่เกี่ยวข้อง", detail: "จาก Knowledge Base", duration: 800 },
+      { label: "ร่างคำตอบที่เหมาะสม", duration: 900 },
+      { label: "ส่งคำตอบกลับ", duration: 400 },
+    ],
+    result: "ตอบลูกค้าเรียบร้อยแล้ว! ✉️ ลูกค้าได้รับคำตอบภายใน 2 นาที",
+  },
+  "สรุปข่าว": {
+    steps: [
+      { label: "ดึงข่าวจาก RSS feeds", duration: 600 },
+      { label: "กรองข่าวที่เกี่ยวข้อง", detail: "จาก 47 บทความ", duration: 700 },
+      { label: "สรุปประเด็นสำคัญ", duration: 1000 },
+      { label: "จัดรูปแบบ Digest", duration: 400 },
+    ],
+    result: "สรุปข่าววันนี้เรียบร้อย! 📰 คัดสรร 8 บทความสำคัญให้แล้ว",
+  },
+  "จัดการไฟล์": {
+    steps: [
+      { label: "สแกนโฟลเดอร์เป้าหมาย", duration: 500 },
+      { label: "จัดหมวดหมู่ไฟล์", detail: "ตามประเภทและวันที่", duration: 800 },
+      { label: "ลบไฟล์ซ้ำและไฟล์ขยะ", duration: 600 },
+      { label: "สร้างรายงานการจัดการ", duration: 400 },
+    ],
+    result: "จัดการไฟล์เรียบร้อย! 🗂️ ประหยัดพื้นที่ไป 2.4 GB",
   },
 };
 
@@ -122,12 +151,10 @@ class MockHermesServiceImpl implements HermesService {
     this.emit({ type: "status", status: "working", message: "รับทราบครับเจ้านาย! กำลังจัดการให้เลย…" });
     this.emit({ type: "task-start", task });
 
-    // Stream each step: running -> done
     let elapsed = 0;
     plan.steps.forEach((planStep, i) => {
       const stepRef = steps[i];
 
-      // Mark running at the start of this step
       this.schedule(() => {
         this.emit({
           type: "task-step",
@@ -143,7 +170,6 @@ class MockHermesServiceImpl implements HermesService {
 
       elapsed += planStep.duration;
 
-      // Mark done at the end of this step
       this.schedule(() => {
         this.emit({
           type: "task-step",
@@ -153,7 +179,6 @@ class MockHermesServiceImpl implements HermesService {
       }, elapsed);
     });
 
-    // Finalize
     this.schedule(() => {
       this.emit({ type: "task-complete", taskId, result: plan.result });
       this.emit({ type: "status", status: "success", message: plan.result });
@@ -162,6 +187,54 @@ class MockHermesServiceImpl implements HermesService {
         this.emit({ type: "status", status: "idle", message: "พร้อมรับงานต่อไปแล้วครับ ☕" });
       }, 2500);
     }, elapsed);
+  }
+
+  simulateError(command: string) {
+    this.clearTimers();
+
+    const taskId = crypto.randomUUID();
+    const now = Date.now();
+
+    const steps: TaskStep[] = [
+      { id: crypto.randomUUID(), label: "เริ่มดำเนินการ", status: "pending" },
+      { id: crypto.randomUUID(), label: "ประมวลผลคำสั่ง", detail: command, status: "pending" },
+      { id: crypto.randomUUID(), label: "ส่งผลลัพธ์", status: "pending" },
+    ];
+
+    const task: TaskLogEntry = {
+      id: taskId,
+      command,
+      result: "",
+      status: "working",
+      timestamp: now,
+      startedAt: now,
+      steps,
+    };
+
+    this.emit({ type: "command", command });
+    this.emit({ type: "status", status: "working", message: "กำลังดำเนินการ…" });
+    this.emit({ type: "task-start", task });
+
+    this.schedule(() => {
+      this.emit({ type: "task-step", taskId, step: { ...steps[0], status: "running", startedAt: Date.now() } });
+    }, 0);
+    this.schedule(() => {
+      this.emit({ type: "task-step", taskId, step: { ...steps[0], status: "done", completedAt: Date.now() } });
+      this.emit({ type: "task-step", taskId, step: { ...steps[1], status: "running", startedAt: Date.now() } });
+    }, 600);
+    this.schedule(() => {
+      this.emit({
+        type: "task-step",
+        taskId,
+        step: { ...steps[1], status: "error", completedAt: Date.now(), detail: "Connection timeout" },
+      });
+      this.emit({ type: "task-error", taskId, error: "เชื่อมต่อ API ไม่ได้ โปรดลองอีกครั้ง 🔴" });
+      this.emit({ type: "status", status: "error", message: "เกิดข้อผิดพลาด! เชื่อมต่อไม่ได้ 🔴" });
+
+      this.schedule(() => {
+        this.emit({ type: "status", status: "idle", message: "พร้อมรับงานต่อไปแล้วครับ ☕" });
+      }, 3000);
+    }, 1400);
   }
 }
 

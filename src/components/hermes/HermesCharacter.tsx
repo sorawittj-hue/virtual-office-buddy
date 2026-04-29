@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Code2 } from "lucide-react";
+import { Check, Code2, AlertTriangle } from "lucide-react";
 import type { HermesStatus } from "@/lib/hermes-types";
 
 interface HermesCharacterProps {
@@ -24,6 +24,11 @@ const bodyVariants: Variants = {
     rotate: [0, -6, 6, 0],
     transition: { duration: 0.7, ease: "easeOut" },
   },
+  error: {
+    x: [0, -6, 6, -4, 4, 0],
+    rotate: 0,
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
 };
 
 export function HermesCharacter({ status }: HermesCharacterProps) {
@@ -32,7 +37,9 @@ export function HermesCharacter({ status }: HermesCharacterProps) {
       ? "monitor-pulse border-status-working"
       : status === "success"
         ? "monitor-success border-status-success"
-        : "border-border";
+        : status === "error"
+          ? "monitor-error border-destructive"
+          : "border-border";
 
   const screenContent =
     status === "working" ? (
@@ -53,11 +60,26 @@ export function HermesCharacter({ status }: HermesCharacterProps) {
           <Check className="w-6 h-6" strokeWidth={3} />
         </motion.div>
       </div>
+    ) : status === "error" ? (
+      <div className="flex flex-col items-center justify-center h-full gap-1">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: [0, 1.3, 1] }}
+          transition={{ type: "spring", stiffness: 400, damping: 14 }}
+          className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center"
+        >
+          <AlertTriangle className="w-5 h-5 text-destructive" />
+        </motion.div>
+        <div className="h-1 w-10 bg-destructive/50 rounded" />
+      </div>
     ) : (
       <div className="flex items-center justify-center h-full text-status-idle text-2xl">
         <span className="animate-pulse">·_·</span>
       </div>
     );
+
+  const faceEmoji =
+    status === "success" ? "🤩" : status === "working" ? "🤓" : status === "error" ? "😰" : "🙂";
 
   return (
     <div className="relative flex flex-col items-center">
@@ -76,9 +98,19 @@ export function HermesCharacter({ status }: HermesCharacterProps) {
           <div className="absolute -right-2 top-7 w-4 h-6 rounded-md bg-foreground/70" />
           {/* Mic */}
           <div className="absolute right-0 top-12 w-6 h-1.5 rounded-full bg-foreground/70" />
-          <span aria-hidden className="relative">
-            {status === "success" ? "🤩" : status === "working" ? "🤓" : "🙂"}
-          </span>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={faceEmoji}
+              aria-hidden
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative"
+            >
+              {faceEmoji}
+            </motion.span>
+          </AnimatePresence>
         </div>
         {/* Body / shirt */}
         <div className="-mt-3 mx-auto w-32 h-20 rounded-t-[2rem] bg-card relative shadow-soft border-2 border-border">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { hermesService } from "@/lib/hermes-service";
 import type { HermesState, TaskLogEntry } from "@/lib/hermes-types";
 
@@ -10,6 +11,7 @@ const initialState: HermesState = {
   channel: "Telegram",
   log: [],
   activeTask: null,
+  totalCompleted: 0,
 };
 
 function patchStep(task: TaskLogEntry, step: TaskLogEntry["steps"][number]): TaskLogEntry {
@@ -47,16 +49,40 @@ export function useHermes() {
               status: "success",
               result: event.result,
               timestamp: Date.now(),
+              completedAt: Date.now(),
             };
+            toast.success(`เสร็จแล้ว: ${completed.command}`, {
+              description: event.result,
+              duration: 4000,
+            });
             return {
               ...prev,
               activeTask: completed,
-              log: [completed, ...prev.log].slice(0, 8),
+              log: [completed, ...prev.log].slice(0, 10),
+              totalCompleted: prev.totalCompleted + 1,
+            };
+          }
+          case "task-error": {
+            if (!prev.activeTask || prev.activeTask.id !== event.taskId) return prev;
+            const failed: TaskLogEntry = {
+              ...prev.activeTask,
+              status: "error",
+              result: event.error,
+              timestamp: Date.now(),
+              completedAt: Date.now(),
+            };
+            toast.error(`เกิดข้อผิดพลาด: ${failed.command}`, {
+              description: event.error,
+              duration: 5000,
+            });
+            return {
+              ...prev,
+              activeTask: failed,
+              log: [failed, ...prev.log].slice(0, 10),
             };
           }
           case "log":
-            // Legacy path — kept for compatibility with non-streaming sources.
-            return { ...prev, log: [event.entry, ...prev.log].slice(0, 8) };
+            return { ...prev, log: [event.entry, ...prev.log].slice(0, 10) };
           default:
             return prev;
         }
@@ -70,5 +96,6 @@ export function useHermes() {
   return {
     ...state,
     simulate: (command: string) => hermesService.simulateTelegramWebhook(command),
+    simulateError: (command: string) => hermesService.simulateError(command),
   };
 }

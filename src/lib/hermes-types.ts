@@ -1,4 +1,4 @@
-export type HermesStatus = "idle" | "working" | "success";
+export type HermesStatus = "idle" | "working" | "success" | "error";
 
 export type StepStatus = "pending" | "running" | "done" | "error";
 
@@ -18,6 +18,7 @@ export interface TaskLogEntry {
   status: "working" | "success" | "error";
   timestamp: number;
   startedAt: number;
+  completedAt?: number;
   steps: TaskStep[];
 }
 
@@ -26,10 +27,11 @@ export interface HermesState {
   bossMessage: string | null;
   hermesMessage: string;
   connection: "online" | "offline" | "reconnecting";
-  channel: string; // e.g. "Telegram"
+  channel: string;
   log: TaskLogEntry[];
   /** The task currently being executed, with live-updating steps. Null when idle. */
   activeTask: TaskLogEntry | null;
+  totalCompleted: number;
 }
 
 export type HermesEvent =
@@ -42,4 +44,5 @@ export type HermesEvent =
       step: TaskStep;
     }
   | { type: "task-complete"; taskId: string; result: string }
+  | { type: "task-error"; taskId: string; error: string }
   | { type: "log"; entry: TaskLogEntry };
