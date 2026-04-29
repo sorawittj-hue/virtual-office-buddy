@@ -12,6 +12,8 @@ import {
   Settings,
   Wifi,
   WifiOff,
+  Cpu,
+  CalendarClock,
 } from "lucide-react";
 import { useHermesService } from "@/lib/hermes-context";
 
@@ -21,7 +23,9 @@ const navItems = [
   { to: "/agents", icon: Users, label: "Agents" },
   { to: "/", icon: Building2, label: "Office" },
   { to: "/skills", icon: Sparkles, label: "Skills" },
-  { to: "/persona", icon: User, label: "Persona" },
+  { to: "/persona", icon: User, label: "Soul" },
+  { to: "/models", icon: Cpu, label: "Models" },
+  { to: "/schedules", icon: CalendarClock, label: "Schedules" },
   { to: "/memory", icon: Brain, label: "Memory" },
   { to: "/tools", icon: Wrench, label: "Tools" },
   { to: "/gateway", icon: Network, label: "Gateway" },
