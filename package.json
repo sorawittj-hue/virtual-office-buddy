@@ -13,6 +13,7 @@
     "telegram": "node --env-file=.env telegram-bridge.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
     "@cloudflare/vite-plugin": "^1.25.5",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",

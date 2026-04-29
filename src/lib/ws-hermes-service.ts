@@ -26,7 +26,10 @@ export class WebSocketHermesService implements HermesService {
   private reconnectDelay = 2000;
   private destroyed = false;
 
-  constructor(private url: string) {}
+  constructor(
+    private url: string,
+    private token?: string,
+  ) {}
 
   subscribeState(listener: (s: WsConnectionState) => void): () => void {
     this.stateListeners.add(listener);
@@ -42,7 +45,10 @@ export class WebSocketHermesService implements HermesService {
     this.destroyed = false;
     this.emitState({ status: "connecting", url: this.url });
     try {
-      this.ws = new WebSocket(this.url);
+      const fullUrl = this.token
+        ? `${this.url}${this.url.includes("?") ? "&" : "?"}token=${encodeURIComponent(this.token)}`
+        : this.url;
+      this.ws = new WebSocket(fullUrl);
     } catch {
       this.emitState({ status: "error", url: this.url, error: "Invalid URL" });
       return;
