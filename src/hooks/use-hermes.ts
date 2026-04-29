@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { hermesService } from "@/lib/hermes-service";
+import { useHermesService } from "@/lib/hermes-context";
 import type { HermesState, TaskLogEntry } from "@/lib/hermes-types";
 
 const initialState: HermesState = {
@@ -22,10 +22,12 @@ function patchStep(task: TaskLogEntry, step: TaskLogEntry["steps"][number]): Tas
 }
 
 export function useHermes() {
+  const { service } = useHermesService();
   const [state, setState] = useState<HermesState>(initialState);
 
   useEffect(() => {
-    const unsub = hermesService.subscribe((event) => {
+    setState(initialState);
+    const unsub = service.subscribe((event) => {
       setState((prev) => {
         switch (event.type) {
           case "command":
@@ -58,7 +60,7 @@ export function useHermes() {
             return {
               ...prev,
               activeTask: completed,
-              log: [completed, ...prev.log].slice(0, 10),
+              log: [completed, ...prev.log].slice(0, 20),
               totalCompleted: prev.totalCompleted + 1,
             };
           }
@@ -78,24 +80,22 @@ export function useHermes() {
             return {
               ...prev,
               activeTask: failed,
-              log: [failed, ...prev.log].slice(0, 10),
+              log: [failed, ...prev.log].slice(0, 20),
             };
           }
           case "log":
-            return { ...prev, log: [event.entry, ...prev.log].slice(0, 10) };
+            return { ...prev, log: [event.entry, ...prev.log].slice(0, 20) };
           default:
             return prev;
         }
       });
     });
-    return () => {
-      unsub();
-    };
-  }, []);
+    return () => unsub();
+  }, [service]);
 
   return {
     ...state,
-    simulate: (command: string) => hermesService.simulateTelegramWebhook(command),
-    simulateError: (command: string) => hermesService.simulateError(command),
+    simulate: (command: string) => service.simulateTelegramWebhook(command),
+    simulateError: (command: string) => service.simulateError(command),
   };
 }

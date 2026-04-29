@@ -9,6 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SkillsRouteImport } from './routes/skills'
+import { Route as SessionsRouteImport } from './routes/sessions'
+import { Route as PersonaRouteImport } from './routes/persona'
+import { Route as MemoryRouteImport } from './routes/memory'
+import { Route as ToolsRouteImport } from './routes/tools'
+import { Route as GatewayRouteImport } from './routes/gateway'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -17,43 +26,146 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const SessionsRoute = SessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const SkillsRoute = SkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const PersonaRoute = PersonaRouteImport.update({
+  id: '/persona',
+  path: '/persona',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const MemoryRoute = MemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const ToolsRoute = ToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const GatewayRoute = GatewayRouteImport.update({
+  id: '/gateway',
+  path: '/gateway',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
+  '/agents': typeof AgentsRoute
+  '/sessions': typeof SessionsRoute
+  '/skills': typeof SkillsRoute
+  '/persona': typeof PersonaRoute
+  '/memory': typeof MemoryRoute
+  '/tools': typeof ToolsRoute
+  '/gateway': typeof GatewayRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
+  '/agents': typeof AgentsRoute
+  '/sessions': typeof SessionsRoute
+  '/skills': typeof SkillsRoute
+  '/persona': typeof PersonaRoute
+  '/memory': typeof MemoryRoute
+  '/tools': typeof ToolsRoute
+  '/gateway': typeof GatewayRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
+  '/agents': typeof AgentsRoute
+  '/sessions': typeof SessionsRoute
+  '/skills': typeof SkillsRoute
+  '/persona': typeof PersonaRoute
+  '/memory': typeof MemoryRoute
+  '/tools': typeof ToolsRoute
+  '/gateway': typeof GatewayRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/chat' | '/agents' | '/sessions' | '/skills' | '/persona' | '/memory' | '/tools' | '/gateway' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/chat' | '/agents' | '/sessions' | '/skills' | '/persona' | '/memory' | '/tools' | '/gateway' | '/settings'
+  id: '__root__' | '/' | '/chat' | '/agents' | '/sessions' | '/skills' | '/persona' | '/memory' | '/tools' | '/gateway' | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChatRoute: typeof ChatRoute
+  AgentsRoute: typeof AgentsRoute
+  SessionsRoute: typeof SessionsRoute
+  SkillsRoute: typeof SkillsRoute
+  PersonaRoute: typeof PersonaRoute
+  MemoryRoute: typeof MemoryRoute
+  ToolsRoute: typeof ToolsRoute
+  GatewayRoute: typeof GatewayRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    '/': { id: '/'; path: '/'; fullPath: '/'; preLoaderRoute: typeof IndexRouteImport; parentRoute: typeof rootRouteImport }
+    '/chat': { id: '/chat'; path: '/chat'; fullPath: '/chat'; preLoaderRoute: typeof ChatRouteImport; parentRoute: typeof rootRouteImport }
+    '/agents': { id: '/agents'; path: '/agents'; fullPath: '/agents'; preLoaderRoute: typeof AgentsRouteImport; parentRoute: typeof rootRouteImport }
+    '/sessions': { id: '/sessions'; path: '/sessions'; fullPath: '/sessions'; preLoaderRoute: typeof SessionsRouteImport; parentRoute: typeof rootRouteImport }
+    '/skills': { id: '/skills'; path: '/skills'; fullPath: '/skills'; preLoaderRoute: typeof SkillsRouteImport; parentRoute: typeof rootRouteImport }
+    '/persona': { id: '/persona'; path: '/persona'; fullPath: '/persona'; preLoaderRoute: typeof PersonaRouteImport; parentRoute: typeof rootRouteImport }
+    '/memory': { id: '/memory'; path: '/memory'; fullPath: '/memory'; preLoaderRoute: typeof MemoryRouteImport; parentRoute: typeof rootRouteImport }
+    '/tools': { id: '/tools'; path: '/tools'; fullPath: '/tools'; preLoaderRoute: typeof ToolsRouteImport; parentRoute: typeof rootRouteImport }
+    '/gateway': { id: '/gateway'; path: '/gateway'; fullPath: '/gateway'; preLoaderRoute: typeof GatewayRouteImport; parentRoute: typeof rootRouteImport }
+    '/settings': { id: '/settings'; path: '/settings'; fullPath: '/settings'; preLoaderRoute: typeof SettingsRouteImport; parentRoute: typeof rootRouteImport }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  IndexRoute,
+  ChatRoute,
+  AgentsRoute,
+  SessionsRoute,
+  SkillsRoute,
+  PersonaRoute,
+  MemoryRoute,
+  ToolsRoute,
+  GatewayRoute,
+  SettingsRoute,
 }
+
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
