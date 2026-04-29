@@ -582,8 +582,8 @@ function SceneContent({ status }: { status: HermesStatus }) {
 
 export function IsometricScene({ status }: { status: HermesStatus }) {
   return (
-    <div className="w-full h-[520px] sm:h-[580px] rounded-3xl overflow-hidden border border-border shadow-pop bg-[#1e1e2e]">
-      <Canvas shadows gl={{ antialias: true }}>
+    <div className="w-full min-w-0 h-[420px] sm:h-[580px] rounded-3xl overflow-hidden border border-border shadow-pop bg-[#1e1e2e]">
+      <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: "default" }}>
         <Suspense fallback={null}>
           <SceneContent status={status} />
         </Suspense>
