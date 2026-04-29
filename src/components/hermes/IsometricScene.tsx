@@ -104,7 +104,7 @@ function VoxelCharacter({
 export function IsometricScene({ status }: { status: HermesStatus }) {
   return (
     <div className="relative h-[420px] min-w-0 overflow-hidden rounded-3xl border border-border bg-card shadow-pop sm:h-[580px]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_18%,oklch(0.98_0.04_215),transparent_34%),linear-gradient(180deg,var(--wall),oklch(0.82_0.06_220))]" />
+      <div className="office-scene-backdrop absolute inset-0" />
       <div className="office-scene" aria-label="ห้องออฟฟิศ 3D พร้อมตัวละคร voxel">
         <div className="wall wall-left">
           <div className="dashboard-screen">
