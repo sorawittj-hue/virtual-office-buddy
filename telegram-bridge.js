@@ -99,6 +99,8 @@ function checkRateLimit(chatId) {
 
 const wss = new WebSocketServer({ host: "0.0.0.0", port: WS_PORT });
 const clients = new Set();
+// Per-client chat history for conversation context
+const chatHistories = new Map(); // ws -> [{role, content}]
 
 wss.on("connection", (ws, req) => {
   if (WS_SECRET) {
@@ -111,21 +113,89 @@ wss.on("connection", (ws, req) => {
   }
 
   clients.add(ws);
+  chatHistories.set(ws, []);
   log(`🔌 Web App เชื่อมต่อแล้ว (${clients.size} clients)`);
   broadcast({ type: "status", status: "idle", message: "พร้อมรับงานครับ ☕" });
 
   ws.on("message", (data) => {
     try {
       const msg = JSON.parse(data.toString());
-      if (msg.type === "ping") ws.send(JSON.stringify({ type: "pong", ts: Date.now() }));
+      if (msg.type === "ping") {
+        ws.send(JSON.stringify({ type: "pong", ts: Date.now() }));
+      } else if (msg.type === "chat-message" && msg.content) {
+        handleChatMessage(ws, String(msg.content));
+      }
     } catch {}
   });
 
   ws.on("close", () => {
     clients.delete(ws);
+    chatHistories.delete(ws);
     log(`🔌 Web App ตัดการเชื่อมต่อ (เหลือ ${clients.size} clients)`);
   });
 });
+
+// ─── Chat message handler (streaming per-client) ───────────────────────────
+
+async function handleChatMessage(ws, content) {
+  if (ws.readyState !== WebSocket.OPEN) return;
+
+  const history = chatHistories.get(ws) ?? [];
+  history.push({ role: "user", content });
+
+  const replyId = randomUUID();
+
+  if (!openai) {
+    // No AI — send a simple text reply
+    ws.send(JSON.stringify({
+      type: "chat-stream", id: replyId,
+      token: "⚠️ ไม่มี AI API ครับ กรุณาตั้งค่า `OPENROUTER_API_KEY` ใน `.env` แล้วรัน bridge ใหม่",
+      done: true,
+    }));
+    return;
+  }
+
+  // Signal start of streaming
+  ws.send(JSON.stringify({ type: "chat-stream", id: replyId, token: "", done: false }));
+
+  try {
+    const stream = await openai.chat.completions.create({
+      model: HERMES_MODEL,
+      stream: true,
+      max_tokens: 2048,
+      messages: [
+        { role: "system", content: HERMES_SYSTEM },
+        ...history.slice(-20), // keep last 20 messages for context
+      ],
+    });
+
+    let fullReply = "";
+    for await (const chunk of stream) {
+      const token = chunk.choices[0]?.delta?.content ?? "";
+      if (token && ws.readyState === WebSocket.OPEN) {
+        fullReply += token;
+        ws.send(JSON.stringify({ type: "chat-stream", id: replyId, token, done: false }));
+      }
+    }
+
+    // Save assistant reply to history
+    if (fullReply) history.push({ role: "assistant", content: fullReply });
+    if (history.length > 40) history.splice(0, history.length - 40);
+    chatHistories.set(ws, history);
+
+    ws.send(JSON.stringify({ type: "chat-stream", id: replyId, token: "", done: true }));
+    log(`💬 Chat reply: ${fullReply.slice(0, 60)}…`);
+  } catch (err) {
+    log(`⚠️  Chat stream error: ${err.message}`);
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: "chat-stream", id: replyId,
+        token: `\n\n❌ Error: ${err.message}`,
+        done: true,
+      }));
+    }
+  }
+}
 
 function broadcast(event) {
   const json = JSON.stringify(event);

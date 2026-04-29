@@ -45,4 +45,5 @@ export type HermesEvent =
     }
   | { type: "task-complete"; taskId: string; result: string }
   | { type: "task-error"; taskId: string; error: string }
-  | { type: "log"; entry: TaskLogEntry };
+  | { type: "log"; entry: TaskLogEntry }
+  | { type: "chat-stream"; id: string; token: string; done: boolean };
