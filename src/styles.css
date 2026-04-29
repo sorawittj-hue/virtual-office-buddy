@@ -199,6 +199,158 @@
       );
     background-blend-mode: multiply;
   }
+
+  .office-scene-backdrop {
+    background:
+      radial-gradient(circle at 35% 18%, oklch(0.98 0.04 215), transparent 34%),
+      linear-gradient(180deg, var(--wall), oklch(0.82 0.06 220));
+  }
+
+  .office-scene {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: min(92vw, 760px);
+    height: min(72vw, 470px);
+    min-height: 330px;
+    transform: translate(-50%, -50%) rotateX(60deg) rotateZ(-42deg);
+    transform-style: preserve-3d;
+  }
+
+  .office-scene *, .office-scene *::before, .office-scene *::after {
+    transform-style: preserve-3d;
+  }
+
+  .wall {
+    position: absolute;
+    background: color-mix(in oklab, var(--wall) 82%, var(--primary));
+    border: 1px solid color-mix(in oklab, var(--border), var(--foreground) 12%);
+    box-shadow: inset 0 0 40px oklch(0.4 0.08 250 / 0.12);
+  }
+
+  .wall-left {
+    left: 0;
+    top: 0;
+    width: 34px;
+    height: 100%;
+    transform: translateZ(72px);
+  }
+
+  .wall-back {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 34px;
+    transform: translateZ(72px);
+  }
+
+  .floor-grid {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background:
+      linear-gradient(135deg, oklch(0.82 0.05 65), oklch(0.72 0.07 55)),
+      repeating-linear-gradient(0deg, oklch(0.45 0.05 60 / 0.18) 0 1px, transparent 1px 42px),
+      repeating-linear-gradient(90deg, oklch(0.45 0.05 60 / 0.18) 0 1px, transparent 1px 42px);
+    background-blend-mode: normal, multiply, multiply;
+    box-shadow: 0 28px 90px oklch(0.25 0.06 250 / 0.35);
+  }
+
+  .carpet {
+    position: absolute;
+    left: 8%;
+    top: 42%;
+    width: 38%;
+    height: 34%;
+    border-radius: 18px;
+    background: linear-gradient(135deg, oklch(0.72 0.11 315), oklch(0.75 0.1 255));
+    transform: translateZ(3px);
+    box-shadow: inset 0 0 0 3px oklch(1 0 0 / 0.18);
+  }
+
+  .office-item { position: absolute; transform-style: preserve-3d; }
+  .desk { width: 118px; height: 82px; transform: translateZ(22px); }
+  .desk-main { left: 58%; top: 48%; }
+  .desk-agent-a { left: 40%; top: 18%; }
+  .desk-agent-b { left: 70%; top: 22%; }
+  .desk-top { inset: 8px 0 auto 0; height: 54px; background: linear-gradient(135deg, var(--wood-light), var(--wood)); transform: translateZ(32px); }
+  .desk-leg { width: 9px; height: 42px; background: var(--wood-dark); transform: translateZ(8px); }
+  .desk-leg-a { left: 8px; top: 45px; }
+  .desk-leg-b { right: 8px; top: 45px; }
+  .desk-leg-c { left: 54px; top: 50px; }
+  .monitor { left: 36px; top: 0; width: 48px; height: 34px; background: oklch(0.18 0.03 250); transform: translateZ(72px) rotateX(-62deg); border: 3px solid oklch(0.25 0.03 250); }
+  .monitor-screen { position: absolute; inset: 4px; display: flex; align-items: end; gap: 4px; background: oklch(0.22 0.07 245); padding: 4px; }
+  .monitor-screen span { flex: 1; border-radius: 2px; background: var(--status-success); }
+  .monitor-screen span:nth-child(2) { height: 70%; background: var(--status-working); }
+  .monitor-screen span:nth-child(3) { height: 48%; background: var(--primary); }
+  .keyboard { left: 36px; top: 49px; width: 48px; height: 13px; background: var(--card); transform: translateZ(36px); }
+  .chair { left: 40px; top: 72px; width: 42px; height: 32px; background: oklch(0.52 0.12 285); transform: translateZ(22px); }
+
+  .sofa { width: 138px; height: 74px; transform: translateZ(22px); }
+  .sofa-a { left: 8%; top: 50%; }
+  .sofa-base { left: 0; top: 20px; width: 138px; height: 42px; background: oklch(0.7 0.15 355); transform: translateZ(25px); }
+  .sofa-back { left: 0; top: 0; width: 138px; height: 24px; background: oklch(0.62 0.14 355); transform: translateZ(48px); }
+  .sofa-arm { width: 18px; height: 62px; background: oklch(0.62 0.14 355); transform: translateZ(40px); }
+  .sofa-arm-a { left: 0; top: 6px; }
+  .sofa-arm-b { right: 0; top: 6px; }
+  .coffee-table { left: 26%; top: 66%; width: 70px; height: 44px; background: var(--wood-dark); transform: translateZ(24px); }
+  .pingpong-table { left: 70%; top: 70%; width: 124px; height: 68px; background: oklch(0.58 0.16 150); transform: translateZ(30px); }
+  .pingpong-table span { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: oklch(0.99 0 0 / 0.7); }
+  .fridge { left: 6%; top: 12%; width: 54px; height: 78px; background: oklch(0.28 0.03 250); transform: translateZ(54px); }
+  .divider { background: oklch(0.52 0.04 260); transform: translateZ(46px); }
+  .divider-a { left: 42%; top: 44%; width: 150px; height: 15px; }
+
+  .dashboard-screen { position: absolute; left: 7px; top: 32%; width: 19px; height: 86px; border-radius: 3px; background: oklch(0.2 0.06 245); transform: translateZ(5px); display: flex; align-items: end; gap: 2px; padding: 4px; }
+  .dashboard-screen span { flex: 1; border-radius: 2px; background: var(--primary); }
+  .dashboard-screen span:nth-child(2) { height: 55%; background: var(--status-success); }
+  .dashboard-screen span:nth-child(3) { height: 80%; background: var(--status-working); }
+  .dashboard-screen span:nth-child(4) { height: 45%; background: var(--destructive); }
+  .back-screen { left: 54%; top: 7px; width: 120px; height: 19px; }
+  .wall-picture { position: absolute; border: 3px solid var(--wood-dark); background: var(--window-sky); transform: translateZ(5px); }
+  .picture-a { left: 7px; top: 18%; width: 19px; height: 52px; }
+  .picture-b { left: 20%; top: 7px; width: 70px; height: 19px; background: var(--plant); }
+  .picture-c { left: 36%; top: 7px; width: 58px; height: 19px; background: var(--boss); }
+
+  .plant { width: 52px; height: 52px; transform: translateZ(22px); }
+  .plant-a { left: 2%; top: 82%; }
+  .plant-b { left: 88%; top: 8%; }
+  .plant-c { left: 88%; top: 84%; }
+  .plant-pot { left: 17px; top: 25px; width: 20px; height: 22px; background: var(--wood-dark); transform: translateZ(12px); }
+  .leaf { border-radius: 999px; background: var(--plant); transform: translateZ(40px); }
+  .leaf-a { left: 13px; top: 6px; width: 28px; height: 28px; }
+  .leaf-b { left: 2px; top: 18px; width: 25px; height: 25px; }
+  .leaf-c { right: 2px; top: 18px; width: 25px; height: 25px; }
+
+  .character { width: 72px; height: 116px; transform: translateZ(50px); }
+  .hermes-char { left: 60%; top: 58%; }
+  .boss-char { left: 28%; top: 38%; }
+  .agent-char { left: 42%; top: 28%; }
+  .char-shadow { left: 14px; top: 88px; width: 44px; height: 20px; border-radius: 999px; background: oklch(0.2 0.03 250 / 0.22); transform: translateZ(1px); }
+  .char-leg { top: 67px; width: 15px; height: 34px; background: oklch(0.24 0.04 250); transform: translateZ(22px); }
+  .char-leg-a { left: 20px; }
+  .char-leg-b { right: 20px; }
+  .char-body { left: 17px; top: 35px; width: 38px; height: 42px; transform: translateZ(45px); }
+  .hermes .char-body, .hermes .char-arm { background: var(--hermes); }
+  .boss .char-body, .boss .char-arm { background: oklch(0.32 0.08 150); }
+  .agent .char-body, .agent .char-arm { background: oklch(0.55 0.1 55); }
+  .char-arm { top: 42px; width: 12px; height: 34px; transform: translateZ(40px); }
+  .char-arm-a { left: 4px; }
+  .char-arm-b { right: 4px; }
+  .char-head { left: 13px; top: 0; width: 46px; height: 46px; background: oklch(0.82 0.07 62); transform: translateZ(64px); }
+  .eye { position: absolute; top: 18px; width: 6px; height: 6px; border-radius: 50%; background: var(--foreground); }
+  .eye-a { left: 12px; }
+  .eye-b { right: 12px; }
+  .headset { position: absolute; left: 5px; right: 5px; top: -4px; height: 15px; border-top: 5px solid var(--foreground); border-radius: 999px 999px 0 0; opacity: 0.8; }
+  .name-label { position: absolute; left: 50%; top: -34px; z-index: 10; display: flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid oklch(1 0 0 / 0.15); border-radius: 8px; background: oklch(0.15 0.03 250 / 0.9); color: oklch(0.99 0 0); padding: 3px 8px; font-size: 11px; font-weight: 800; transform: translateX(-50%) rotateZ(42deg) rotateX(-60deg) translateZ(96px); box-shadow: var(--shadow-soft); }
+  .name-label small { color: oklch(0.85 0.02 250); font-size: 10px; font-weight: 500; }
+  .status-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--status-success); box-shadow: 0 0 8px currentColor; }
+  .status-dot.working { background: var(--status-working); }
+  .status-dot.success { background: var(--status-success); }
+  .status-dot.error { background: var(--destructive); }
+
+  @media (max-width: 640px) {
+    .office-scene { width: 660px; height: 410px; top: 54%; transform: translate(-50%, -50%) scale(0.78) rotateX(60deg) rotateZ(-42deg); }
+  }
 }
 
 @keyframes monitor-pulse {
