@@ -1,6 +1,6 @@
 import { useRef, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrthographicCamera, Html } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { HermesStatus } from "@/lib/hermes-types";
 
@@ -477,15 +477,6 @@ function VoxelCharacter({ position, rotation = 0, name, role, bodyColor, headCol
 function SceneContent({ status }: { status: HermesStatus }) {
   return (
     <>
-      <OrthographicCamera
-        makeDefault
-        position={[18, 18, 18]}
-        zoom={42}
-        near={0.1}
-        far={500}
-        onUpdate={(camera) => camera.lookAt(0, 0, 0)}
-      />
-
       {/* Lighting */}
       <ambientLight intensity={0.75} />
       <directionalLight
@@ -590,7 +581,17 @@ function SceneContent({ status }: { status: HermesStatus }) {
 export function IsometricScene({ status }: { status: HermesStatus }) {
   return (
     <div className="w-full min-w-0 h-[420px] sm:h-[580px] rounded-3xl overflow-hidden border border-border shadow-pop bg-[#1e1e2e]">
-      <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: "default" }}>
+      <Canvas
+        orthographic
+        shadows
+        dpr={[1, 1.5]}
+        camera={{ position: [18, 18, 18], zoom: 42, near: 0.1, far: 500 }}
+        gl={{ antialias: true, powerPreference: "default" }}
+        onCreated={({ camera }) => {
+          camera.lookAt(0, 0, 0);
+          camera.updateProjectionMatrix();
+        }}
+      >
         <Suspense fallback={null}>
           <SceneContent status={status} />
         </Suspense>
