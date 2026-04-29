@@ -477,7 +477,14 @@ function VoxelCharacter({ position, rotation = 0, name, role, bodyColor, headCol
 function SceneContent({ status }: { status: HermesStatus }) {
   return (
     <>
-      <OrthographicCamera makeDefault position={[18, 18, 18]} zoom={42} near={0.1} far={500} />
+      <OrthographicCamera
+        makeDefault
+        position={[18, 18, 18]}
+        zoom={42}
+        near={0.1}
+        far={500}
+        onUpdate={(camera) => camera.lookAt(0, 0, 0)}
+      />
 
       {/* Lighting */}
       <ambientLight intensity={0.75} />
