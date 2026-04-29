@@ -36,7 +36,7 @@ function Sidebar() {
 
   return (
     <aside
-      className="w-[210px] shrink-0 flex flex-col h-screen overflow-hidden border-r border-white/5"
+      className="hidden lg:flex w-[210px] shrink-0 flex-col h-screen overflow-hidden border-r border-white/5"
       style={{ background: "#0d0d18" }}
     >
       {/* Logo */}
@@ -111,9 +111,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-w-0 overflow-auto pb-16 lg:pb-0">
         {children}
       </div>
+      <nav className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-border bg-card/95 px-2 py-2 shadow-pop backdrop-blur lg:hidden">
+        {navItems.slice(0, 5).map(({ to, icon: Icon, label }) => (
+          <Link
+            key={to}
+            to={to}
+            activeProps={{ className: "text-primary" }}
+            inactiveProps={{ className: "text-muted-foreground" }}
+            className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] font-semibold transition-colors"
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="max-w-full truncate">{label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }
