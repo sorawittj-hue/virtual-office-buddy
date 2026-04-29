@@ -13,7 +13,9 @@ import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SessionsRouteImport } from './routes/sessions'
+import { Route as SchedulesRouteImport } from './routes/schedules'
 import { Route as PersonaRouteImport } from './routes/persona'
+import { Route as ModelsRouteImport } from './routes/models'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as GatewayRouteImport } from './routes/gateway'
 import { Route as ChatRouteImport } from './routes/chat'
@@ -30,6 +32,11 @@ const SkillsRoute = SkillsRouteImport.update({
   path: '/skills',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SchedulesRoute = SchedulesRouteImport.update({
+  id: '/schedules',
+  path: '/schedules',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -43,6 +50,11 @@ const SessionsRoute = SessionsRouteImport.update({
 const PersonaRoute = PersonaRouteImport.update({
   id: '/persona',
   path: '/persona',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelsRoute = ModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MemoryRoute = MemoryRouteImport.update({
@@ -77,7 +89,9 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
   '/memory': typeof MemoryRoute
+  '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
+  '/schedules': typeof SchedulesRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/skills': typeof SkillsRoute
@@ -89,7 +103,9 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
   '/memory': typeof MemoryRoute
+  '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
+  '/schedules': typeof SchedulesRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/skills': typeof SkillsRoute
@@ -102,7 +118,9 @@ export interface FileRoutesById {
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
   '/memory': typeof MemoryRoute
+  '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
+  '/schedules': typeof SchedulesRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/skills': typeof SkillsRoute
@@ -116,7 +134,9 @@ export interface FileRouteTypes {
     | '/chat'
     | '/gateway'
     | '/memory'
+    | '/models'
     | '/persona'
+    | '/schedules'
     | '/sessions'
     | '/settings'
     | '/skills'
@@ -128,7 +148,9 @@ export interface FileRouteTypes {
     | '/chat'
     | '/gateway'
     | '/memory'
+    | '/models'
     | '/persona'
+    | '/schedules'
     | '/sessions'
     | '/settings'
     | '/skills'
@@ -140,7 +162,9 @@ export interface FileRouteTypes {
     | '/chat'
     | '/gateway'
     | '/memory'
+    | '/models'
     | '/persona'
+    | '/schedules'
     | '/sessions'
     | '/settings'
     | '/skills'
@@ -153,7 +177,9 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
   GatewayRoute: typeof GatewayRoute
   MemoryRoute: typeof MemoryRoute
+  ModelsRoute: typeof ModelsRoute
   PersonaRoute: typeof PersonaRoute
+  SchedulesRoute: typeof SchedulesRoute
   SessionsRoute: typeof SessionsRoute
   SettingsRoute: typeof SettingsRoute
   SkillsRoute: typeof SkillsRoute
@@ -195,6 +221,20 @@ declare module '@tanstack/react-router' {
       path: '/persona'
       fullPath: '/persona'
       preLoaderRoute: typeof PersonaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/models': {
+      id: '/models'
+      path: '/models'
+      fullPath: '/models'
+      preLoaderRoute: typeof ModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/schedules': {
+      id: '/schedules'
+      path: '/schedules'
+      fullPath: '/schedules'
+      preLoaderRoute: typeof SchedulesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/memory': {
@@ -241,7 +281,9 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
   GatewayRoute: GatewayRoute,
   MemoryRoute: MemoryRoute,
+  ModelsRoute: ModelsRoute,
   PersonaRoute: PersonaRoute,
+  SchedulesRoute: SchedulesRoute,
   SessionsRoute: SessionsRoute,
   SettingsRoute: SettingsRoute,
   SkillsRoute: SkillsRoute,
