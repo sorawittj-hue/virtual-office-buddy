@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Network,
   Wifi,
@@ -9,59 +9,20 @@ import {
   XCircle,
   Copy,
   Check,
-  Terminal,
-  ArrowRight,
-  ShieldCheck,
-  ShieldAlert,
   Eye,
   EyeOff,
+  Globe,
+  Plug,
+  Activity,
+  Terminal,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useHermesService } from "@/lib/hermes-context";
+import { toast } from "sonner";
 
+const DEFAULT_API_URL = "http://localhost:8642";
 const DEFAULT_WS_URL = "ws://localhost:18789";
-
-const protocolSnippet = `// ตัวอย่าง Node.js backend (ws library)
-const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 18789 });
-
-wss.on('connection', (ws) => {
-  // รับคำสั่งจาก web app
-  ws.on('message', (data) => {
-    const msg = JSON.parse(data);
-
-    if (msg.type === 'command') {
-      // เริ่มงาน → ส่ง task-start
-      ws.send(JSON.stringify({
-        type: 'task-start',
-        task: {
-          id: crypto.randomUUID(),
-          command: msg.command,
-          status: 'working',
-          timestamp: Date.now(),
-          startedAt: Date.now(),
-          steps: [
-            { id: crypto.randomUUID(), label: 'กำลังดำเนินการ', status: 'pending' }
-          ]
-        }
-      }));
-
-      // อัพเดท step → ส่ง task-step
-      // เสร็จแล้ว → ส่ง task-complete
-      ws.send(JSON.stringify({
-        type: 'task-complete',
-        taskId: '<task-id>',
-        result: 'เสร็จเรียบร้อย!'
-      }));
-    }
-  });
-
-  // แจ้งสถานะ Hermes
-  ws.send(JSON.stringify({
-    type: 'status',
-    status: 'idle',
-    message: 'พร้อมรับงานครับ ☕'
-  }));
-});`;
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -70,52 +31,119 @@ function CopyButton({ text }: { text: string }) {
       onClick={() => {
         navigator.clipboard.writeText(text);
         setCopied(true);
+        toast.success("คัดลอกแล้ว");
         setTimeout(() => setCopied(false), 2000);
       }}
       className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
     >
       {copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
-      {copied ? "คัดลอกแล้ว" : "คัดลอก"}
     </button>
   );
 }
 
+function StatusBadge({ status, error }: { status?: string; error?: string }) {
+  if (status === "connected") {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-status-success/10 border border-status-success/30 text-status-success text-sm font-medium">
+        <CheckCircle2 className="w-5 h-5" />
+        เชื่อมต่อแล้ว
+      </div>
+    );
+  }
+  if (status === "connecting") {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 text-sm font-medium">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        กำลังเชื่อมต่อ…
+      </div>
+    );
+  }
+  if (status === "error") {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-medium">
+        <XCircle className="w-5 h-5" />
+        {error ?? "เชื่อมต่อไม่ได้"}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-muted/60 border border-border text-muted-foreground text-sm font-medium">
+      <WifiOff className="w-5 h-5" />
+      ยังไม่ได้เชื่อมต่อ
+    </div>
+  );
+}
+
 export function GatewayPage() {
-  const { wsState, connectWs, disconnectWs } = useHermesService();
-  const [url, setUrl] = useState(() => localStorage.getItem("hermes-ws-url") || DEFAULT_WS_URL);
-  const [token, setToken] = useState(() => localStorage.getItem("hermes-ws-token") || "");
-  const [showToken, setShowToken] = useState(false);
+  const { wsState, connectApi, connectWs, disconnect } = useHermesService();
+
+  const savedMode = typeof window !== "undefined" ? (localStorage.getItem("hermes-mode") ?? "api") : "api";
+  const [mode, setMode] = useState<"api" | "ws">(savedMode as "api" | "ws");
+
+  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem("hermes-api-url") || DEFAULT_API_URL);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("hermes-api-key") || "");
+  const [wsUrl, setWsUrl] = useState(() => localStorage.getItem("hermes-ws-url") || DEFAULT_WS_URL);
+  const [wsToken, setWsToken] = useState(() => localStorage.getItem("hermes-ws-token") || "");
+  const [showSecret, setShowSecret] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const isConnected = wsState?.status === "connected";
   const isConnecting = wsState?.status === "connecting";
-  const isInsecure = url.startsWith("ws://") && !url.startsWith("ws://localhost");
 
-  useEffect(() => {
-    const savedUrl = localStorage.getItem("hermes-ws-url");
-    const savedToken = localStorage.getItem("hermes-ws-token");
-    if (savedUrl) setUrl(savedUrl);
-    if (savedToken) setToken(savedToken);
-  }, []);
+  const handleConnect = () => {
+    if (mode === "api") {
+      if (!apiUrl.trim()) return;
+      connectApi(apiUrl.trim(), apiKey.trim() || undefined);
+    } else {
+      if (!wsUrl.trim()) return;
+      connectWs(wsUrl.trim(), wsToken.trim() || undefined);
+    }
+  };
 
-  const handleConnect = () => connectWs(url, token || undefined);
+  const handleDisconnect = () => {
+    disconnect();
+    toast.success("ยกเลิกการเชื่อมต่อแล้ว");
+  };
 
-  const statusIcon = isConnected ? (
-    <CheckCircle2 className="w-5 h-5 text-status-success" />
-  ) : isConnecting ? (
-    <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />
-  ) : wsState?.status === "error" ? (
-    <XCircle className="w-5 h-5 text-destructive" />
-  ) : (
-    <WifiOff className="w-5 h-5 text-muted-foreground" />
-  );
+  const apiSetupSteps = [
+    "# 1. ติดตั้ง Hermes Agent",
+    "pip install hermes-agent  # หรือใช้ install script",
+    "",
+    "# 2. ตั้งค่า .env",
+    "OPENROUTER_API_KEY=sk-or-...",
+    "TELEGRAM_BOT_TOKEN=...  # optional",
+    "",
+    "# 3. รัน Hermes Gateway",
+    "hermes gateway",
+    "# → API server พร้อมที่ http://localhost:8642",
+  ];
 
-  const statusText = isConnected
-    ? "เชื่อมต่อแล้ว"
-    : isConnecting
-      ? "กำลังเชื่อมต่อ…"
-      : wsState?.status === "error"
-        ? `Error: ${wsState.error}`
-        : "ไม่ได้เชื่อมต่อ (Mock Mode)";
+  const wsSetupSteps = [
+    "# 1. ใช้ telegram-bridge.js ที่มีในโปรเจค",
+    "cp .env.example .env  # แก้ WS_SECRET, OPENROUTER_API_KEY",
+    "",
+    "# 2. รัน bridge",
+    "npm run telegram",
+    "# → WS server พร้อมที่ ws://localhost:18789",
+  ];
+
+  const protocols = mode === "api"
+    ? [
+        { dir: "POST", path: "/v1/chat/completions", desc: "Chat + SSE streaming", color: "text-green-500" },
+        { dir: "GET", path: "/v1/models", desc: "รายการ models ที่ใช้งาน", color: "text-blue-500" },
+        { dir: "GET", path: "/health/detailed", desc: "สถานะและ uptime", color: "text-blue-500" },
+        { dir: "GET/POST", path: "/api/jobs", desc: "Cron jobs CRUD", color: "text-yellow-500" },
+        { dir: "POST", path: "/api/jobs/:id/run", desc: "รัน job ทันที", color: "text-yellow-500" },
+        { dir: "POST", path: "/v1/runs", desc: "Background tasks", color: "text-purple-500" },
+      ]
+    : [
+        { dir: "← รับ", path: "status", desc: "อัพเดทสถานะ Hermes", color: "text-blue-500" },
+        { dir: "← รับ", path: "task-start/step/complete", desc: "lifecycle ของงาน", color: "text-blue-500" },
+        { dir: "← รับ", path: "chat-stream", desc: "per-token streaming", color: "text-blue-500" },
+        { dir: "→ ส่ง", path: "chat-message", desc: "ส่งข้อความ chat", color: "text-green-500" },
+        { dir: "→ ส่ง", path: "command", desc: "สั่งให้ Hermes ทำงาน", color: "text-green-500" },
+        { dir: "↔", path: "ping/pong", desc: "keep-alive ทุก 30 วินาที", color: "text-muted-foreground" },
+      ];
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
@@ -124,104 +152,127 @@ export function GatewayPage() {
           <Network className="w-6 h-6 text-primary" />
           Gateway
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          เชื่อมต่อ Web App นี้กับ Hermes Agent ของคุณผ่าน WebSocket
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">เชื่อมต่อ Dashboard กับ Hermes Agent</p>
+      </div>
+
+      {/* Mode toggle */}
+      <div className="flex rounded-xl bg-muted/50 border border-border p-1 gap-1">
+        <button
+          onClick={() => { setMode("api"); }}
+          disabled={isConnected || isConnecting}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${
+            mode === "api" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+          } disabled:opacity-50`}
+        >
+          <Globe className="w-4 h-4" />
+          Hermes Agent API
+          <span className="text-[10px] opacity-70 font-normal">แนะนำ</span>
+        </button>
+        <button
+          onClick={() => { setMode("ws"); }}
+          disabled={isConnected || isConnecting}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${
+            mode === "ws" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+          } disabled:opacity-50`}
+        >
+          <Plug className="w-4 h-4" />
+          Custom WS Bridge
+        </button>
       </div>
 
       {/* Connection card */}
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        key={mode}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl bg-card border border-border p-5 space-y-4"
       >
         <div className="flex items-center gap-2">
-          <Wifi className="w-4 h-4 text-primary" />
-          <h2 className="font-bold text-card-foreground">WebSocket Connection</h2>
+          {mode === "api" ? <Globe className="w-4 h-4 text-primary" /> : <Plug className="w-4 h-4 text-primary" />}
+          <h2 className="font-bold text-card-foreground text-sm">
+            {mode === "api" ? "Hermes Agent REST API" : "WebSocket Bridge"}
+          </h2>
         </div>
 
-        {/* Status */}
-        <div
-          className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium ${
-            isConnected
-              ? "bg-status-success/10 border border-status-success/30 text-status-success"
-              : wsState?.status === "error"
-                ? "bg-destructive/10 border border-destructive/30 text-destructive"
-                : "bg-muted/60 border border-border text-muted-foreground"
-          }`}
-        >
-          {statusIcon}
-          {statusText}
-          {isConnected && (
-            <span className="ml-auto text-xs font-normal opacity-70">{wsState?.url?.split("?")[0]}</span>
-          )}
-        </div>
+        <StatusBadge status={wsState?.status} error={wsState?.error} />
 
-        {/* Insecure URL warning */}
-        {isInsecure && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400 text-xs">
-            <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <span>URL ไม่ได้เข้ารหัส (ws://) — ใช้ wss:// สำหรับ production เพื่อความปลอดภัย</span>
-          </div>
+        {mode === "api" ? (
+          <>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Base URL</label>
+              <input
+                type="text"
+                value={apiUrl}
+                onChange={(e) => setApiUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !isConnected && handleConnect()}
+                placeholder="http://localhost:8642"
+                disabled={isConnected || isConnecting}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                API Key
+                <span className="text-muted-foreground/60 font-normal normal-case">— ถ้าตั้ง API_SERVER_KEY ใน .env</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showSecret ? "text" : "password"}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="ว่างได้ถ้าใช้ local"
+                  disabled={isConnected || isConnecting}
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                />
+                <button onClick={() => setShowSecret(!showSecret)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WebSocket URL</label>
+              <input
+                type="text"
+                value={wsUrl}
+                onChange={(e) => setWsUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !isConnected && handleConnect()}
+                placeholder="ws://localhost:18789"
+                disabled={isConnected || isConnecting}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Secret Key (WS_SECRET)</label>
+              <div className="relative">
+                <input
+                  type={showSecret ? "text" : "password"}
+                  value={wsToken}
+                  onChange={(e) => setWsToken(e.target.value)}
+                  placeholder="ว่างได้ถ้าไม่ได้ตั้ง WS_SECRET"
+                  disabled={isConnected || isConnecting}
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                />
+                <button onClick={() => setShowSecret(!showSecret)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
-        {/* URL input */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            WebSocket URL
-          </label>
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !isConnected && handleConnect()}
-            placeholder="ws://localhost:18789"
-            disabled={isConnected || isConnecting}
-            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-          />
-        </div>
-
-        {/* Secret key input */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Secret Key (WS_SECRET)
-            <span className="text-muted-foreground/60 font-normal normal-case">— ถ้าตั้งค่าใน .env</span>
-          </label>
-          <div className="relative">
-            <input
-              type={showToken ? "text" : "password"}
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !isConnected && handleConnect()}
-              placeholder="ว่างได้ถ้าไม่ได้ตั้ง WS_SECRET"
-              disabled={isConnected || isConnecting}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-            />
-            <button
-              type="button"
-              onClick={() => setShowToken(!showToken)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Action buttons */}
         <div className="flex gap-2">
           {isConnected || isConnecting ? (
-            <button
-              onClick={disconnectWs}
-              className="flex-1 px-4 py-2 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-semibold hover:bg-destructive/20 transition-colors"
-            >
+            <button onClick={handleDisconnect} className="flex-1 px-4 py-2 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-semibold hover:bg-destructive/20 transition-colors">
               ยกเลิกการเชื่อมต่อ
             </button>
           ) : (
             <button
               onClick={handleConnect}
-              disabled={!url.trim()}
-              className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+              disabled={mode === "api" ? !apiUrl.trim() : !wsUrl.trim()}
+              className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 hover:bg-primary/90 transition-colors"
             >
               เชื่อมต่อ
             </button>
@@ -236,70 +287,60 @@ export function GatewayPage() {
         transition={{ delay: 0.05 }}
         className="rounded-2xl bg-primary/5 border border-primary/20 p-5 space-y-3"
       >
-        <div className="flex items-center gap-2">
-          <ArrowRight className="w-4 h-4 text-primary" />
-          <h3 className="font-bold text-foreground text-sm">เริ่มใช้งาน Hermes Bridge</h3>
-        </div>
-        <div className="space-y-1.5 text-xs text-muted-foreground font-mono">
-          {[
-            "# 1. clone แล้ว install",
-            "git clone <repo> && npm install",
-            "",
-            "# 2. ตั้งค่า .env",
-            "cp .env.example .env",
-            "# แก้ TELEGRAM_BOT_TOKEN, WS_SECRET, ALLOWED_CHAT_IDS",
-            "",
-            "# 3. รัน bridge",
-            "npm run telegram",
-          ].map((line, i) => (
-            <div key={i} className={line.startsWith("#") ? "text-primary/70" : ""}>
-              {line || <br />}
-            </div>
-          ))}
-        </div>
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="w-full flex items-center justify-between text-sm font-bold text-foreground"
+        >
+          <div className="flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-primary" />
+            วิธีเริ่มต้น {mode === "api" ? "Hermes Agent Gateway" : "WS Bridge"}
+          </div>
+          {showAdvanced ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        <AnimatePresence>
+          {showAdvanced && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              <div className="rounded-xl border border-border overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b border-border">
+                  <span className="text-xs font-mono text-muted-foreground">terminal</span>
+                  <CopyButton text={(mode === "api" ? apiSetupSteps : wsSetupSteps).filter(l => !l.startsWith("#")).join("\n")} />
+                </div>
+                <pre className="p-4 text-xs font-mono text-foreground/80 bg-background leading-relaxed overflow-x-auto">
+                  {(mode === "api" ? apiSetupSteps : wsSetupSteps).map((line, i) => (
+                    <div key={i} className={line.startsWith("#") ? "text-primary/60" : ""}>{line || " "}</div>
+                  ))}
+                </pre>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
-      {/* Protocol documentation */}
+      {/* Protocol reference */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="rounded-2xl bg-card border border-border p-5 space-y-4"
+        className="rounded-2xl bg-card border border-border p-5 space-y-3"
       >
-        <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-primary" />
-          <h2 className="font-bold text-card-foreground">WebSocket Protocol</h2>
+        <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+          <Activity className="w-4 h-4 text-primary" />
+          {mode === "api" ? "API Endpoints" : "WebSocket Protocol"}
         </div>
-
-        <div className="space-y-2">
-          {[
-            { dir: "← รับ", type: "status", desc: "อัพเดทสถานะ Hermes (idle/working/success/error)", color: "text-blue-500" },
-            { dir: "← รับ", type: "task-start", desc: "เริ่มงานใหม่พร้อม steps ทั้งหมด", color: "text-blue-500" },
-            { dir: "← รับ", type: "task-step", desc: "อัพเดท step แต่ละขั้น (running/done/error)", color: "text-blue-500" },
-            { dir: "← รับ", type: "task-complete", desc: "งานเสร็จ พร้อม result", color: "text-blue-500" },
-            { dir: "← รับ", type: "task-error", desc: "งานผิดพลาด พร้อม error message", color: "text-blue-500" },
-            { dir: "→ ส่ง", type: "command", desc: "ส่งคำสั่งไปให้ Hermes execute", color: "text-green-500" },
-            { dir: "→ ส่ง", type: "chat-message", desc: "ส่งข้อความ chat", color: "text-green-500" },
-            { dir: "↔ ping", type: "ping/pong", desc: "keep-alive ทุก 30 วินาที", color: "text-muted-foreground" },
-          ].map((item) => (
-            <div key={item.type} className="flex items-start gap-3 px-3 py-2 rounded-lg bg-muted/40">
-              <span className={`text-xs font-bold shrink-0 mt-0.5 ${item.color}`}>{item.dir}</span>
-              <code className="text-xs font-mono text-foreground shrink-0">{item.type}</code>
+        <div className="space-y-1.5">
+          {protocols.map((item) => (
+            <div key={item.path} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40">
+              <span className={`text-xs font-bold shrink-0 w-20 ${item.color}`}>{item.dir}</span>
+              <code className="text-xs font-mono text-foreground shrink-0">{item.path}</code>
               <span className="text-xs text-muted-foreground">{item.desc}</span>
             </div>
           ))}
         </div>
-
-        {/* Code snippet */}
-        <div className="rounded-xl overflow-hidden border border-border">
-          <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b border-border">
-            <span className="text-xs font-mono text-muted-foreground">server.js</span>
-            <CopyButton text={protocolSnippet} />
-          </div>
-          <pre className="p-4 text-xs font-mono text-foreground/80 overflow-x-auto bg-background leading-relaxed">
-            {protocolSnippet}
-          </pre>
-        </div>
+        {mode === "api" && (
+          <p className="text-xs text-muted-foreground/70">
+            ใช้ header <code className="px-1 rounded bg-muted font-mono">X-Hermes-Session-Id</code> เพื่อรักษา conversation context ข้ามคำถาม
+          </p>
+        )}
       </motion.div>
     </div>
   );

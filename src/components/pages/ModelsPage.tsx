@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu, Plus, Trash2, Check, Star, Save, X, ChevronDown } from "lucide-react";
+import { Cpu, Plus, Trash2, Check, Star, Save, X, RefreshCw, Cloud } from "lucide-react";
 import { toast } from "sonner";
+import { useHermesService } from "@/lib/hermes-context";
 
 interface ModelConfig {
   id: string;
@@ -109,13 +110,36 @@ function ProviderBadge({ provider }: { provider: string }) {
 }
 
 export function ModelsPage() {
+  const { apiService, wsState } = useHermesService();
+  const isApiConnected = wsState?.status === "connected" && !!apiService;
+
   const [models, setModels] = useState<ModelConfig[]>(loadModels);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
+  const [liveModels, setLiveModels] = useState<{ id: string; owned_by?: string }[]>([]);
+  const [loadingLive, setLoadingLive] = useState(false);
 
   useEffect(() => {
     saveModels(models);
   }, [models]);
+
+  const fetchLiveModels = async () => {
+    if (!apiService) return;
+    setLoadingLive(true);
+    try {
+      const data = await apiService.fetchModels();
+      setLiveModels(data);
+    } catch {
+      toast.error("โหลด models จาก Hermes ไม่ได้");
+    } finally {
+      setLoadingLive(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isApiConnected) fetchLiveModels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isApiConnected]);
 
   const selectedProvider = providerInfo(form.provider);
 
@@ -182,6 +206,32 @@ export function ModelsPage() {
           เพิ่ม Model
         </button>
       </div>
+
+      {/* Live models from Hermes API */}
+      {isApiConnected && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-primary/5 border border-primary/20 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+              <Cloud className="w-4 h-4 text-primary" />
+              Models จาก Hermes Agent
+            </div>
+            <button onClick={fetchLiveModels} disabled={loadingLive} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingLive ? "animate-spin" : ""}`} />
+            </button>
+          </div>
+          {liveModels.length === 0 ? (
+            <p className="text-xs text-muted-foreground">{loadingLive ? "กำลังโหลด…" : "ไม่มี models"}</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {liveModels.map((m) => (
+                <span key={m.id} className="px-2.5 py-1 rounded-lg bg-muted text-xs font-mono text-foreground border border-border">
+                  {m.id}
+                </span>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Active model */}
       {defaultModel && (
