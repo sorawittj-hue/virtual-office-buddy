@@ -43,60 +43,85 @@ function CopyButton({ text }: { text: string }) {
 
 function MarkdownContent({ content }: { content: string }) {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      className="prose prose-sm dark:prose-invert max-w-none"
-      components={{
-        code({ className, children, ...props }: any) {
-          const match = /language-(\w+)/.exec(className || "");
-          if (!match) {
+    <div className="prose prose-sm dark:prose-invert max-w-none">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code({
+            className,
+            children,
+            ...props
+          }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) {
+            const match = /language-(\w+)/.exec(className || "");
+            if (!match) {
+              return (
+                <code
+                  className="px-1.5 py-0.5 rounded-md bg-muted/60 font-mono text-xs border border-border"
+                  {...props}
+                >
+                  {children}
+                </code>
+              );
+            }
             return (
-              <code
-                className="px-1.5 py-0.5 rounded-md bg-muted/60 font-mono text-xs border border-border"
-                {...props}
+              <SyntaxHighlighter
+                style={oneDark}
+                language={match[1]}
+                PreTag="div"
+                className="!rounded-xl !text-xs !my-2"
               >
-                {children}
-              </code>
+                {String(children).replace(/\n$/, "")}
+              </SyntaxHighlighter>
             );
-          }
-          return (
-            <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div" className="!rounded-xl !text-xs !my-2">
-              {String(children).replace(/\n$/, "")}
-            </SyntaxHighlighter>
-          );
-        },
-        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-sm">{children}</p>,
-        ul: ({ children }) => <ul className="mb-2 pl-4 list-disc space-y-0.5 text-sm">{children}</ul>,
-        ol: ({ children }) => <ol className="mb-2 pl-4 list-decimal space-y-0.5 text-sm">{children}</ol>,
-        li: ({ children }) => <li>{children}</li>,
-        h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3">{children}</h1>,
-        h2: ({ children }) => <h2 className="text-sm font-bold mb-1.5 mt-3">{children}</h2>,
-        h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-2">{children}</h3>,
-        blockquote: ({ children }) => (
-          <blockquote className="pl-3 border-l-2 border-primary/50 text-muted-foreground italic mb-2 text-sm">
-            {children}
-          </blockquote>
-        ),
-        a: ({ children, href }) => (
-          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
-            {children}
-          </a>
-        ),
-        table: ({ children }) => (
-          <div className="overflow-x-auto mb-2 rounded-lg border border-border">
-            <table className="text-xs border-collapse w-full">{children}</table>
-          </div>
-        ),
-        th: ({ children }) => (
-          <th className="px-3 py-1.5 bg-muted font-semibold text-left border-b border-border text-xs">{children}</th>
-        ),
-        td: ({ children }) => <td className="px-3 py-1.5 border-b border-border last:border-b-0 text-xs">{children}</td>,
-        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-        hr: () => <hr className="border-border my-2" />,
-      }}
-    >
-      {content}
-    </ReactMarkdown>
+          },
+          p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-sm">{children}</p>,
+          ul: ({ children }) => (
+            <ul className="mb-2 pl-4 list-disc space-y-0.5 text-sm">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="mb-2 pl-4 list-decimal space-y-0.5 text-sm">{children}</ol>
+          ),
+          li: ({ children }) => <li>{children}</li>,
+          h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-sm font-bold mb-1.5 mt-3">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-2">{children}</h3>,
+          blockquote: ({ children }) => (
+            <blockquote className="pl-3 border-l-2 border-primary/50 text-muted-foreground italic mb-2 text-sm">
+              {children}
+            </blockquote>
+          ),
+          a: ({ children, href }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline underline-offset-2"
+            >
+              {children}
+            </a>
+          ),
+          table: ({ children }) => (
+            <div className="overflow-x-auto mb-2 rounded-lg border border-border">
+              <table className="text-xs border-collapse w-full">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => (
+            <th className="px-3 py-1.5 bg-muted font-semibold text-left border-b border-border text-xs">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="px-3 py-1.5 border-b border-border last:border-b-0 text-xs">
+              {children}
+            </td>
+          ),
+          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+          hr: () => <hr className="border-border my-2" />,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }
 
@@ -120,7 +145,9 @@ function loadMessages(): ChatMessage[] {
 function saveMessages(msgs: ChatMessage[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs.slice(-MAX_STORED)));
-  } catch {}
+  } catch {
+    // ignore storage errors
+  }
 }
 
 const WELCOME: ChatMessage = {
@@ -163,7 +190,9 @@ export function ChatPage() {
             { id, role: "assistant", content: token, timestamp: Date.now(), streaming: true },
           ]);
         } else if (!done && streamingIdRef.current === id) {
-          setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, content: m.content + token } : m)));
+          setMessages((prev) =>
+            prev.map((m) => (m.id === id ? { ...m, content: m.content + token } : m)),
+          );
         } else if (done && streamingIdRef.current === id) {
           streamingIdRef.current = null;
           setIsStreaming(false);
@@ -194,7 +223,14 @@ export function ChatPage() {
       return true;
     }
     if (cmd === "/new") {
-      setMessages([{ ...WELCOME, id: crypto.randomUUID(), content: "เริ่ม session ใหม่แล้วครับ! มีอะไรให้ช่วยไหม? 🙂", timestamp: Date.now() }]);
+      setMessages([
+        {
+          ...WELCOME,
+          id: crypto.randomUUID(),
+          content: "เริ่ม session ใหม่แล้วครับ! มีอะไรให้ช่วยไหม? 🙂",
+          timestamp: Date.now(),
+        },
+      ]);
       toast.success("เริ่ม session ใหม่");
       return true;
     }
@@ -324,7 +360,11 @@ export function ChatPage() {
                 )}
               </div>
 
-              <div className={`max-w-[78%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
+              <div
+                className={`max-w-[78%] flex flex-col gap-1 ${
+                  msg.role === "user" ? "items-end" : "items-start"
+                }`}
+              >
                 <div
                   className={`px-4 py-3 rounded-2xl text-sm ${
                     msg.role === "user"
@@ -348,7 +388,9 @@ export function ChatPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 px-1">
-                  <span className="text-[10px] text-muted-foreground">{formatTime(msg.timestamp)}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatTime(msg.timestamp)}
+                  </span>
                   {!msg.streaming && <CopyButton text={msg.content} />}
                 </div>
               </div>
@@ -415,7 +457,10 @@ export function ChatPage() {
               value={input}
               onChange={handleInputChange}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
                 if (e.key === "Escape") setShowSlashMenu(false);
               }}
               placeholder={isStreaming ? "Hermes กำลังตอบ…" : "พิมพ์คำสั่งหรือ /slash…"}
