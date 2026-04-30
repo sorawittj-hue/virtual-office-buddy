@@ -207,4 +207,53 @@ export class HermesApiService implements HermesService {
       headers: this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {},
     });
   }
+
+  async fetchPlatforms(): Promise<Record<string, { connected: boolean; status?: string }>> {
+    try {
+      const res = await fetch(`${this.baseUrl}/health/detailed`, {
+        headers: this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {},
+      });
+      const data = await res.json();
+      return data.platforms ?? {};
+    } catch {
+      return {};
+    }
+  }
+
+  async switchModel(modelId: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify({
+          model: modelId,
+          messages: [{ role: "system", content: `/model ${modelId}` }],
+          stream: false,
+          max_tokens: 1,
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+export async function testProviderConnection(
+  baseUrl: string,
+  apiKey?: string,
+  modelId?: string,
+): Promise<{ ok: boolean; latency: number; error?: string }> {
+  const start = Date.now();
+  try {
+    const url = `${baseUrl.replace(/\/$/, "")}/models`;
+    const res = await fetch(url, {
+      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (res.ok) return { ok: true, latency: Date.now() - start };
+    return { ok: false, latency: Date.now() - start, error: `HTTP ${res.status}` };
+  } catch (err) {
+    return { ok: false, latency: Date.now() - start, error: err instanceof Error ? err.message : "Unknown" };
+  }
 }

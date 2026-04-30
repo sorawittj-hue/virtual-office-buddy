@@ -14,6 +14,7 @@ import {
   WifiOff,
   Cpu,
   CalendarClock,
+  Layers,
 } from "lucide-react";
 import { useHermesService } from "@/lib/hermes-context";
 
@@ -25,6 +26,7 @@ const navItems = [
   { to: "/skills", icon: Sparkles, label: "Skills" },
   { to: "/persona", icon: User, label: "Soul" },
   { to: "/models", icon: Cpu, label: "Models" },
+  { to: "/platforms", icon: Layers, label: "Platforms" },
   { to: "/schedules", icon: CalendarClock, label: "Schedules" },
   { to: "/memory", icon: Brain, label: "Memory" },
   { to: "/tools", icon: Wrench, label: "Tools" },
@@ -91,7 +93,7 @@ function Sidebar() {
             <>
               <Wifi className="w-3.5 h-3.5 text-green-400 shrink-0" />
               <span className="text-green-400 font-medium truncate">
-                {wsState?.url?.replace("ws://", "").replace("wss://", "")}
+                {wsState?.url?.replace("ws://", "").replace("wss://", "").replace("http://", "").replace("https://", "")}
               </span>
             </>
           ) : wsState?.status === "connecting" ? (

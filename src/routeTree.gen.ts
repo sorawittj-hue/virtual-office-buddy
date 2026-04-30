@@ -14,6 +14,7 @@ import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as SchedulesRouteImport } from './routes/schedules'
+import { Route as PlatformsRouteImport } from './routes/platforms'
 import { Route as PersonaRouteImport } from './routes/persona'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as MemoryRouteImport } from './routes/memory'
@@ -45,6 +46,11 @@ const SessionsRoute = SessionsRouteImport.update({
 const SchedulesRoute = SchedulesRouteImport.update({
   id: '/schedules',
   path: '/schedules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlatformsRoute = PlatformsRouteImport.update({
+  id: '/platforms',
+  path: '/platforms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PersonaRoute = PersonaRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
+  '/platforms': typeof PlatformsRoute
   '/schedules': typeof SchedulesRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
+  '/platforms': typeof PlatformsRoute
   '/schedules': typeof SchedulesRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
+  '/platforms': typeof PlatformsRoute
   '/schedules': typeof SchedulesRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/models'
     | '/persona'
+    | '/platforms'
     | '/schedules'
     | '/sessions'
     | '/settings'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/models'
     | '/persona'
+    | '/platforms'
     | '/schedules'
     | '/sessions'
     | '/settings'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/memory'
     | '/models'
     | '/persona'
+    | '/platforms'
     | '/schedules'
     | '/sessions'
     | '/settings'
@@ -179,6 +191,7 @@ export interface RootRouteChildren {
   MemoryRoute: typeof MemoryRoute
   ModelsRoute: typeof ModelsRoute
   PersonaRoute: typeof PersonaRoute
+  PlatformsRoute: typeof PlatformsRoute
   SchedulesRoute: typeof SchedulesRoute
   SessionsRoute: typeof SessionsRoute
   SettingsRoute: typeof SettingsRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/schedules'
       fullPath: '/schedules'
       preLoaderRoute: typeof SchedulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/platforms': {
+      id: '/platforms'
+      path: '/platforms'
+      fullPath: '/platforms'
+      preLoaderRoute: typeof PlatformsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/persona': {
@@ -283,6 +303,7 @@ const rootRouteChildren: RootRouteChildren = {
   MemoryRoute: MemoryRoute,
   ModelsRoute: ModelsRoute,
   PersonaRoute: PersonaRoute,
+  PlatformsRoute: PlatformsRoute,
   SchedulesRoute: SchedulesRoute,
   SessionsRoute: SessionsRoute,
   SettingsRoute: SettingsRoute,
