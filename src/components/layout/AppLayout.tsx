@@ -16,6 +16,7 @@ import {
   CalendarClock,
   Layers,
 } from "lucide-react";
+import { useEffect } from "react";
 import { useHermesService } from "@/lib/hermes-context";
 
 const navItems = [
@@ -113,26 +114,46 @@ function Sidebar() {
   );
 }
 
+function useBrowserNotifications() {
+  const { service } = useHermesService();
+  useEffect(() => {
+    return service.subscribe((event) => {
+      if (event.type !== "task-complete" && event.type !== "task-error") return;
+      if (localStorage.getItem("prism-browser-notifs") !== "1") return;
+      if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      if (document.visibilityState === "visible") return;
+      const isError = event.type === "task-error";
+      new Notification(isError ? "Prism — Task Failed" : "Prism — Task Complete", {
+        body: isError ? (event as any).error : (event as any).result?.slice(0, 100) ?? "Done",
+        icon: "/favicon.ico",
+      });
+    });
+  }, [service]);
+}
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  useBrowserNotifications();
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <div className="flex-1 min-w-0 overflow-auto pb-16 lg:pb-0">
         {children}
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-border bg-card/95 px-2 py-2 shadow-pop backdrop-blur lg:hidden">
-        {navItems.slice(0, 5).map(({ to, icon: Icon, label }) => (
-          <Link
-            key={to}
-            to={to}
-            activeProps={{ className: "text-primary" }}
-            inactiveProps={{ className: "text-muted-foreground" }}
-            className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] font-semibold transition-colors"
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="max-w-full truncate">{label}</span>
-          </Link>
-        ))}
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur lg:hidden">
+        <div className="flex overflow-x-auto scrollbar-none px-1 py-2 gap-0.5">
+          {navItems.map(({ to, icon: Icon, label }) => (
+            <Link
+              key={to}
+              to={to}
+              activeProps={{ className: "text-primary bg-primary/10" }}
+              inactiveProps={{ className: "text-muted-foreground" }}
+              className="flex min-w-[56px] shrink-0 flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors"
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{label}</span>
+            </Link>
+          ))}
+        </div>
       </nav>
     </div>
   );

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Settings, Moon, Sun, Bell, Globe, Trash2, Check, ShieldCheck, ShieldAlert, Shield } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Settings, Moon, Sun, Bell, Globe, Trash2, Check, ShieldCheck, ShieldAlert, Shield, Download, Upload } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   GUARDRAIL_RULES,
@@ -7,6 +7,57 @@ import {
   saveGuardrailConfig,
 } from "@/lib/guardrails";
 import { toast } from "sonner";
+
+// ─── Keys that are part of the exportable backup ─────────────────────────────
+const BACKUP_KEYS = [
+  "hermes-models",
+  "hermes-skills-enabled",
+  "hermes-memories",
+  "hermes-guardrails-config",
+  "prism-webhooks",
+  "hermes-gateway-url",
+  "hermes-gateway-apikey",
+  "theme",
+];
+
+function exportSettings() {
+  const data: Record<string, unknown> = { _version: 1, _exportedAt: new Date().toISOString() };
+  BACKUP_KEYS.forEach((key) => {
+    const val = localStorage.getItem(key);
+    if (val !== null) {
+      try { data[key] = JSON.parse(val); } catch { data[key] = val; }
+    }
+  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `prism-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success("Exported backup successfully");
+}
+
+function importSettings(file: File) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target?.result as string);
+      let count = 0;
+      BACKUP_KEYS.forEach((key) => {
+        if (key in data) {
+          localStorage.setItem(key, JSON.stringify(data[key]));
+          count++;
+        }
+      });
+      toast.success(`Imported ${count} settings — reload to apply`);
+      setTimeout(() => window.location.reload(), 1500);
+    } catch {
+      toast.error("Invalid backup file");
+    }
+  };
+  reader.readAsText(file);
+}
 
 // ─── Guardrails section ───────────────────────────────────────────────────────
 function GuardrailsSection() {
@@ -123,6 +174,7 @@ export function SettingsPage() {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [notifications, setNotifications] = useState(true);
   const [saved, setSaved] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -167,7 +219,7 @@ export function SettingsPage() {
         {
           icon: Bell,
           label: "Toast Notifications",
-          desc: "แสดงการแจ้งเตือนเมื่องานเสร็จหรือ error",
+          desc: "Show in-app toast when a task completes or errors",
           control: (
             <button
               onClick={() => setNotifications((n) => !n)}
@@ -178,6 +230,33 @@ export function SettingsPage() {
                 className="absolute top-0.5 rounded-full bg-white shadow transition-all"
                 style={{ width: "18px", height: "18px", left: notifications ? "20px" : "2px" }}
               />
+            </button>
+          ),
+        },
+        {
+          icon: Bell,
+          label: "Browser Notifications",
+          desc: "Get a desktop notification even when the tab is in the background",
+          control: (
+            <button
+              onClick={async () => {
+                if (!("Notification" in window)) {
+                  toast.error("Browser notifications not supported");
+                  return;
+                }
+                const perm = await Notification.requestPermission();
+                if (perm === "granted") {
+                  localStorage.setItem("prism-browser-notifs", "1");
+                  new Notification("Prism", { body: "Browser notifications enabled!", icon: "/favicon.ico" });
+                  toast.success("Browser notifications enabled");
+                } else {
+                  localStorage.removeItem("prism-browser-notifs");
+                  toast.error("Permission denied — allow in browser settings");
+                }
+              }}
+              className="text-xs px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 font-semibold text-foreground transition-colors"
+            >
+              {typeof window !== "undefined" && Notification.permission === "granted" ? "✓ Enabled" : "Enable"}
             </button>
           ),
         },
@@ -241,17 +320,46 @@ export function SettingsPage() {
       {/* Guardrails section */}
       <GuardrailsSection />
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={save}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           {saved ? <Check className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
-          {saved ? "บันทึกแล้ว!" : "บันทึกการตั้งค่า"}
+          {saved ? "Saved!" : "Save Settings"}
         </button>
-        <button className="flex items-center gap-1.5 text-xs text-destructive hover:text-destructive/80 transition-colors">
+        <button
+          onClick={exportSettings}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-muted text-foreground text-sm font-semibold hover:bg-muted/80 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export Backup
+        </button>
+        <button
+          onClick={() => importRef.current?.click()}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-muted text-foreground text-sm font-semibold hover:bg-muted/80 transition-colors"
+        >
+          <Upload className="w-4 h-4" />
+          Import Backup
+        </button>
+        <input
+          ref={importRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) importSettings(f); e.target.value = ""; }}
+        />
+        <button
+          onClick={() => {
+            if (!confirm("Reset ALL settings to default? This cannot be undone.")) return;
+            BACKUP_KEYS.forEach((k) => localStorage.removeItem(k));
+            toast.success("Settings reset — reloading…");
+            setTimeout(() => window.location.reload(), 1200);
+          }}
+          className="flex items-center gap-1.5 text-xs text-destructive hover:text-destructive/80 transition-colors ml-auto"
+        >
           <Trash2 className="w-3.5 h-3.5" />
-          รีเซ็ตทั้งหมด
+          Reset All
         </button>
       </div>
     </div>
