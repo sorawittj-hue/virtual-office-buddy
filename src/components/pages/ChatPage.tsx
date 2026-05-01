@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, MessageSquare, Wifi, Copy, Check, Trash2, Hash } from "lucide-react";
+import { Send, Bot, User, MessageSquare, Wifi, Copy, Check, Trash2, Hash, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -148,6 +148,63 @@ function saveMessages(msgs: ChatMessage[]) {
   } catch {
     // ignore storage errors
   }
+}
+
+function ModelPickerInline() {
+  const [open, setOpen] = useState(false);
+  const [models, setModels] = useState<{ id: string; name: string; isDefault: boolean }[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("hermes-models") || "[]");
+      setModels(stored.map((m: any) => ({ id: m.id, name: m.name, isDefault: m.isDefault })));
+    } catch {
+      setModels([]);
+    }
+  }, [open]);
+
+  const active = models.find((m) => m.isDefault);
+  if (models.length === 0) return null;
+
+  const setDefault = (id: string) => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("hermes-models") || "[]");
+      const next = stored.map((m: any) => ({ ...m, isDefault: m.id === id }));
+      localStorage.setItem("hermes-models", JSON.stringify(next));
+      setModels(next.map((m: any) => ({ id: m.id, name: m.name, isDefault: m.isDefault })));
+      toast.success(`สลับไป ${next.find((m: any) => m.id === id)?.name}`);
+      setOpen(false);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 border border-border text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+      >
+        <span className="truncate max-w-[140px]">{active?.name ?? "เลือก model"}</span>
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 w-56 rounded-xl border border-border bg-card shadow-lg z-20 overflow-hidden">
+          {models.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setDefault(m.id)}
+              className={`w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors ${
+                m.isDefault ? "bg-primary/10 text-primary font-semibold" : "text-foreground"
+              }`}
+            >
+              {m.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const WELCOME: ChatMessage = {
@@ -309,6 +366,7 @@ export function ChatPage() {
               {isConnected ? "เชื่อมต่อแล้ว · ออนไลน์" : "Mock Mode · ไม่ได้เชื่อมต่อ"}
             </p>
           </div>
+          <ModelPickerInline />
         </div>
         <div className="flex items-center gap-1.5">
           <button
