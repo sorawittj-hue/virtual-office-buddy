@@ -15,6 +15,7 @@ import {
   Cpu,
   CalendarClock,
   Layers,
+  LayoutDashboard,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useHermesService } from "@/lib/hermes-context";
@@ -28,6 +29,7 @@ const navItems = [
   { to: "/persona", icon: User, label: "Soul" },
   { to: "/models", icon: Cpu, label: "Models" },
   { to: "/platforms", icon: Layers, label: "Platforms" },
+  { to: "/kanban", icon: LayoutDashboard, label: "Kanban" },
   { to: "/schedules", icon: CalendarClock, label: "Schedules" },
   { to: "/memory", icon: Brain, label: "Memory" },
   { to: "/tools", icon: Wrench, label: "Tools" },

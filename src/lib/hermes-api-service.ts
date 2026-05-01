@@ -237,6 +237,78 @@ export class HermesApiService implements HermesService {
       return false;
     }
   }
+
+  // ─── Kanban ─────────────────────────────────────────────────────────────────
+
+  async fetchKanbanTasks(params?: { status?: string; assignee?: string; tenant?: string }): Promise<import("./kanban").HermesKanbanTask[]> {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.assignee) qs.set("assignee", params.assignee);
+    if (params?.tenant) qs.set("tenant", params.tenant);
+    const res = await fetch(`${this.baseUrl}/api/kanban/tasks?${qs}`, {
+      headers: this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {},
+      signal: AbortSignal.timeout(10_000),
+    });
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.tasks ?? []);
+  }
+
+  async createKanbanTask(body: {
+    title: string; body?: string; assignee?: string; priority?: number;
+    tenant?: string; parent_id?: string; triage?: boolean;
+  }): Promise<import("./kanban").HermesKanbanTask> {
+    const res = await fetch(`${this.baseUrl}/api/kanban/tasks`, {
+      method: "POST", headers: this.headers, body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10_000),
+    });
+    return res.json();
+  }
+
+  async updateKanbanTask(id: string, patch: {
+    status?: string; assignee?: string; priority?: number; title?: string; body?: string;
+  }): Promise<import("./kanban").HermesKanbanTask> {
+    const res = await fetch(`${this.baseUrl}/api/kanban/tasks/${id}`, {
+      method: "PATCH", headers: this.headers, body: JSON.stringify(patch),
+      signal: AbortSignal.timeout(10_000),
+    });
+    return res.json();
+  }
+
+  async commentKanbanTask(id: string, comment: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/comments`, {
+      method: "POST", headers: this.headers, body: JSON.stringify({ body: comment }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  }
+
+  async completeKanbanTask(id: string, result: string, summary?: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/complete`, {
+      method: "POST", headers: this.headers,
+      body: JSON.stringify({ result, summary }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  }
+
+  async blockKanbanTask(id: string, reason: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/block`, {
+      method: "POST", headers: this.headers, body: JSON.stringify({ reason }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  }
+
+  async unblockKanbanTask(id: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/unblock`, {
+      method: "POST", headers: this.headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+  }
+
+  async archiveKanbanTask(id: string): Promise<void> {
+    await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/archive`, {
+      method: "POST", headers: this.headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+  }
 }
 
 export async function testProviderConnection(
