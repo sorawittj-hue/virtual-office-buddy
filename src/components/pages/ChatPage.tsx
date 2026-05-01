@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, Bot, User, MessageSquare, Wifi, Copy, Check, Trash2,
   Hash, ChevronDown, Search, X, BarChart2, Globe, Image, Code2, Zap,
+  ShieldAlert, ShieldCheck, AlertTriangle, Shield,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -11,6 +12,11 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useHermesService } from "@/lib/hermes-context";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import {
+  checkInput, checkOutput, checkCost,
+  loadGuardrailConfig,
+  type GuardrailViolation,
+} from "@/lib/guardrails";
 
 const STORAGE_KEY = "hermes-chat-messages";
 const MAX_STORED = 100;
@@ -23,6 +29,114 @@ interface ChatMessage {
   streaming?: boolean;
   tokens?: number;
   cost?: number;
+  guardrailViolations?: GuardrailViolation[];
+}
+
+// ─── Guardrail banner shown inline ───────────────────────────────────────────
+function GuardrailBanner({
+  violations,
+  onDismiss,
+  onProceed,
+}: {
+  violations: GuardrailViolation[];
+  onDismiss: () => void;
+  onProceed?: () => void;
+}) {
+  const hasBlock = violations.some((v) => v.severity === "block");
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
+      className={`rounded-xl border px-4 py-3 text-sm ${
+        hasBlock
+          ? "bg-destructive/10 border-destructive/30 text-destructive"
+          : "bg-yellow-500/10 border-yellow-500/30 text-yellow-600 dark:text-yellow-400"
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        {hasBlock
+          ? <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+          : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold mb-1">
+            {hasBlock ? "Guardrails บล็อกข้อความนี้" : "Guardrails ตรวจพบความเสี่ยง"}
+          </div>
+          <ul className="space-y-0.5">
+            {violations.map((v) => (
+              <li key={v.ruleId} className="text-xs opacity-90">
+                <span className={`font-semibold mr-1 ${v.severity === "block" ? "text-destructive" : "text-yellow-600 dark:text-yellow-400"}`}>
+                  [{v.severity === "block" ? "BLOCK" : "WARN"}]
+                </span>
+                {v.message}
+                {v.matched && <span className="font-mono ml-1 opacity-70">({v.matched})</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <button onClick={onDismiss} className="p-1 rounded hover:bg-black/10 transition-colors shrink-0">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      {!hasBlock && onProceed && (
+        <div className="flex gap-2 mt-2 ml-6">
+          <button
+            onClick={onProceed}
+            className="text-xs px-3 py-1 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 font-semibold transition-colors"
+          >
+            ส่งต่อไป (ยืนยัน)
+          </button>
+          <button
+            onClick={onDismiss}
+            className="text-xs px-3 py-1 rounded-lg hover:bg-black/10 font-semibold transition-colors opacity-70"
+          >
+            ยกเลิก
+          </button>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Violation badge on assistant message ────────────────────────────────────
+function ViolationBadge({ violations }: { violations: GuardrailViolation[] }) {
+  const [open, setOpen] = useState(false);
+  if (violations.length === 0) return null;
+  const hasBlock = violations.some((v) => v.severity === "block");
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold transition-colors ${
+          hasBlock
+            ? "bg-destructive/10 text-destructive"
+            : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+        }`}
+      >
+        <Shield className="w-2.5 h-2.5" />
+        {violations.length} guardrail{violations.length > 1 ? "s" : ""}
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute bottom-full mb-1 left-0 w-64 bg-card border border-border rounded-xl shadow-lg p-3 z-10 space-y-1"
+          >
+            {violations.map((v) => (
+              <div key={v.ruleId} className="text-xs">
+                <span className={`font-semibold ${v.severity === "block" ? "text-destructive" : "text-yellow-500"}`}>
+                  {v.ruleName}:
+                </span>{" "}
+                <span className="text-muted-foreground">{v.message}</span>
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 // ─── Token / Cost estimation ──────────────────────────────────────────────────
@@ -239,6 +353,12 @@ export function ChatPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [sessionTokens, setSessionTokens] = useState(0);
   const [sessionCost, setSessionCost] = useState(0);
+  // Guardrails state
+  const [guardrailBanner, setGuardrailBanner] = useState<{
+    violations: GuardrailViolation[];
+    pendingText: string;
+  } | null>(null);
+  const guardrailConfig = loadGuardrailConfig();
   const streamingIdRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -271,8 +391,24 @@ export function ChatPage() {
               const tokens = estimateTokens(m.content);
               const cost = estimateCost(tokens, getActiveModelId());
               setSessionTokens((t) => t + tokens);
-              setSessionCost((c) => c + cost);
-              return { ...m, streaming: false, tokens, cost };
+              setSessionCost((c) => {
+                const next = c + cost;
+                // Cost circuit breaker check
+                const costResult = checkCost(next, guardrailConfig);
+                if (costResult.violations.length > 0) {
+                  toast.warning(costResult.violations[0].message, { duration: 6000 });
+                }
+                return next;
+              });
+              // Output guardrails
+              const outputResult = checkOutput(m.content, guardrailConfig);
+              return {
+                ...m,
+                streaming: false,
+                tokens,
+                cost,
+                guardrailViolations: outputResult.violations.length > 0 ? outputResult.violations : undefined,
+              };
             })
           );
         }
@@ -282,9 +418,14 @@ export function ChatPage() {
           const cost = estimateCost(tokens, getActiveModelId());
           setSessionTokens((t) => t + tokens);
           setSessionCost((c) => c + cost);
+          const outputResult = checkOutput(event.result, guardrailConfig);
           setMessages((prev) => [
             ...prev,
-            { id: crypto.randomUUID(), role: "assistant", content: event.result, timestamp: Date.now(), tokens, cost },
+            {
+              id: crypto.randomUUID(), role: "assistant", content: event.result,
+              timestamp: Date.now(), tokens, cost,
+              guardrailViolations: outputResult.violations.length > 0 ? outputResult.violations : undefined,
+            },
           ]);
         }
       }
@@ -383,25 +524,43 @@ export function ChatPage() {
     return false;
   }, [messages, service, sessionTokens, sessionCost]);
 
+  // Actually dispatch text to service (after guardrail check passed)
+  const dispatch = useCallback((text: string) => {
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: text, timestamp: Date.now() }]);
+    if (service.sendChatMessage) {
+      service.sendChatMessage(text);
+    } else {
+      service.simulateTelegramWebhook(text);
+    }
+  }, [service]);
+
   const send = useCallback(() => {
     const text = input.trim();
     if (!text || isStreaming) return;
     setInput("");
     setShowSlashMenu(false);
+    setGuardrailBanner(null);
 
     if (text.startsWith("/")) {
       const handled = handleSlashCommand(text);
       if (handled) return;
     }
 
-    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: text, timestamp: Date.now() }]);
-
-    if (service.sendChatMessage) {
-      service.sendChatMessage(text);
-    } else {
-      service.simulateTelegramWebhook(text);
+    // Run input guardrails
+    const result = checkInput(text, guardrailConfig);
+    if (!result.safe) {
+      // Hard block — show banner, do not send
+      setGuardrailBanner({ violations: result.violations, pendingText: text });
+      return;
     }
-  }, [input, isStreaming, handleSlashCommand, service]);
+    if (result.violations.length > 0) {
+      // Warnings — show banner with confirm option
+      setGuardrailBanner({ violations: result.violations, pendingText: text });
+      return;
+    }
+
+    dispatch(text);
+  }, [input, isStreaming, handleSlashCommand, guardrailConfig, dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -448,6 +607,11 @@ export function ChatPage() {
 
         {/* Header actions */}
         <div className="flex items-center gap-1.5">
+          {/* Guardrails active badge */}
+          <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg bg-status-success/10 text-[10px] text-status-success font-semibold" title="Guardrails active">
+            <ShieldCheck className="w-2.5 h-2.5" />
+            <span>Guardrails</span>
+          </div>
           {/* Session usage badge */}
           {sessionTokens > 0 && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg bg-muted/50 text-[10px] text-muted-foreground">
@@ -566,9 +730,16 @@ export function ChatPage() {
                   <span className="text-[10px] text-muted-foreground">{formatTime(msg.timestamp)}</span>
                   {!msg.streaming && <CopyButton text={msg.content} />}
                 </div>
-                {/* Token / cost badge for assistant messages */}
-                {msg.role === "assistant" && !msg.streaming && msg.tokens && msg.tokens > 0 && (
-                  <TokenBadge tokens={msg.tokens} cost={msg.cost ?? 0} />
+                {/* Token / cost badge + guardrail violation badge for assistant messages */}
+                {msg.role === "assistant" && !msg.streaming && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {msg.tokens && msg.tokens > 0 && (
+                      <TokenBadge tokens={msg.tokens} cost={msg.cost ?? 0} />
+                    )}
+                    {msg.guardrailViolations && msg.guardrailViolations.length > 0 && (
+                      <ViolationBadge violations={msg.guardrailViolations} />
+                    )}
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -593,6 +764,23 @@ export function ChatPage() {
             ))}
           </div>
         )}
+
+        {/* Guardrail banner */}
+        <AnimatePresence>
+          {guardrailBanner && (
+            <div className="mb-2">
+              <GuardrailBanner
+                violations={guardrailBanner.violations}
+                onDismiss={() => setGuardrailBanner(null)}
+                onProceed={
+                  guardrailBanner.violations.every((v) => v.severity === "warn")
+                    ? () => { dispatch(guardrailBanner.pendingText); setGuardrailBanner(null); }
+                    : undefined
+                }
+              />
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Slash command menu */}
         <AnimatePresence>
