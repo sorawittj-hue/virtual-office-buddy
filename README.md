@@ -26,6 +26,7 @@ One agent. Many channels. Full control.
 | **Web-based (no install)** | ❌ | ✅ |
 | **3D Office scene** | ❌ | ✅ |
 | **Schedules live CRUD** | ❌ | ✅ |
+| **Workflow Automation (webhooks)** | ❌ | ✅ |
 
 ---
 
@@ -34,7 +35,7 @@ One agent. Many channels. Full control.
 ### 💬 Chat
 - **SSE Streaming** — real-time responses with blinking cursor
 - **Token & Cost tracking** — `~X tokens · $Y` under every reply + session total in header
-- **7 Slash Commands** — `/clear` `/new` `/help` `/web` `/image` `/code` `/usage`
+- **8 Slash Commands** — `/clear` `/new` `/help` `/web` `/image` `/code` `/usage` `/trigger`
 - **Message search** — real-time filter across chat history
 - **Markdown + Syntax Highlight** — code blocks, tables, blockquotes
 - **Inline Model Picker** — switch models without leaving the chat
@@ -95,6 +96,26 @@ Email · SMS · BlueBubbles · Home Assistant · Webhook · Voice · GitHub · T
 
 - Required env keys reference per platform
 - Live status from Hermes Agent API
+
+### ⚡ Workflow Automation — Webhook Integration
+
+Connect Prism to any automation platform (n8n, Zapier, Make, custom endpoints) with a built-in webhook manager.
+
+| Feature | Details |
+|---------|---------|
+| HTTP Methods | GET · POST · PUT · PATCH |
+| Payload Templates | `{{prompt}}` · `{{timestamp}}` · `{{name}}` variables |
+| Slash Command | `/trigger <name> [prompt]` from Chat |
+| Response Preview | Status code · body · latency in Chat |
+| CRUD | Add · edit · delete · enable/disable per webhook |
+
+**Quick start with n8n:**
+```
+1. Create a Webhook node in n8n → copy URL
+2. Tools → Workflow Automation → Add Webhook
+3. Paste URL, set method POST, save
+4. In Chat: /trigger my-workflow hello world
+```
 
 ### 📅 Schedules — Live CRUD
 - Create / edit / run cron jobs

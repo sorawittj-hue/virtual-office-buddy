@@ -17,6 +17,7 @@ import {
   loadGuardrailConfig,
   type GuardrailViolation,
 } from "@/lib/guardrails";
+import { loadWebhooks, triggerWebhook } from "@/lib/webhooks";
 
 const STORAGE_KEY = "hermes-chat-messages";
 const MAX_STORED = 100;
@@ -175,7 +176,8 @@ const SLASH_COMMANDS = [
   { cmd: "/web",    desc: "ค้นหาเว็บ <query>",            icon: Globe },
   { cmd: "/image",  desc: "สร้างภาพ <prompt>",           icon: Image },
   { cmd: "/code",   desc: "เขียนโค้ด <task>",             icon: Code2 },
-  { cmd: "/usage",  desc: "แสดงสถิติ token / cost",       icon: BarChart2 },
+  { cmd: "/usage",   desc: "แสดงสถิติ token / cost",          icon: BarChart2 },
+  { cmd: "/trigger", desc: "ทริกเกอร์ webhook <name> [prompt]", icon: Zap },
 ];
 
 const QUICK_COMMANDS = ["ส่งอีเมล", "นัดประชุม", "ค้นหาข้อมูล", "สรุปข่าว", "สร้างรายงาน"];
@@ -519,6 +521,37 @@ export function ChatPage() {
       service.sendChatMessage
         ? service.sendChatMessage(`เขียนโค้ดสำหรับ: ${args} (ตอบเป็น code block พร้อม syntax highlighting)`)
         : service.simulateTelegramWebhook(`เขียนโค้ดสำหรับ: ${args}`);
+      return true;
+    }
+    if (base === "/trigger") {
+      const [webhookName, ...promptParts] = rest;
+      if (!webhookName) {
+        toast.error("ระบุชื่อ webhook: /trigger <name> [prompt]");
+        return true;
+      }
+      const webhooks = loadWebhooks().filter((w) => w.enabled);
+      const wh = webhooks.find((w) => w.name.toLowerCase() === webhookName.toLowerCase());
+      if (!wh) {
+        const names = webhooks.map((w) => w.name).join(", ") || "ไม่มี webhook";
+        setMessages((prev) => [...prev, {
+          id: crypto.randomUUID(), role: "assistant",
+          content: `ไม่พบ webhook ชื่อ **${webhookName}**\n\nWebhooks ที่ใช้ได้: ${names}\n\nเพิ่ม webhook ได้ที่หน้า **Tools**`,
+          timestamp: Date.now(),
+        }]);
+        return true;
+      }
+      const triggerPrompt = promptParts.join(" ").trim();
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: cmd, timestamp: Date.now() }]);
+      triggerWebhook(wh, triggerPrompt).then((result) => {
+        const status = result.ok ? `✅ ${result.status}` : `❌ ${result.status || "Error"}`;
+        const content = [
+          `**Webhook: ${wh.name}** — ${status} _(${result.durationMs}ms)_`,
+          result.body ? `\`\`\`\n${result.body.slice(0, 500)}\n\`\`\`` : "",
+        ].filter(Boolean).join("\n\n");
+        setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content, timestamp: Date.now() }]);
+        if (result.ok) toast.success(`Webhook "${wh.name}" triggered`);
+        else toast.error(`Webhook failed: ${result.status || result.body.slice(0, 60)}`);
+      });
       return true;
     }
     return false;
