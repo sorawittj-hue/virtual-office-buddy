@@ -1,7 +1,8 @@
-# systemd service file for Prism Dashboard (self-hosted)
+# systemd service file for Prism Dashboard (self-hosted, no Docker)
 #
 # Install:
 #   sudo cp scripts/prism.service /etc/systemd/system/prism-dashboard.service
+#   # Edit User= and WorkingDirectory= below to match your setup
 #   sudo systemctl daemon-reload
 #   sudo systemctl enable --now prism-dashboard
 #
@@ -14,17 +15,17 @@ After=network.target
 
 [Service]
 Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/virtual-office-buddy
+User=root
+Environment="HOME=/root"
+Environment="PATH=/root/.bun/bin:/root/.nvm/versions/node/v22.22.0/bin:/usr/local/bin:/usr/bin:/bin"
+WorkingDirectory=/root/virtual-office-buddy
 
-# Load environment from .env if it exists
-EnvironmentFile=-/home/ubuntu/virtual-office-buddy/.env
-Environment=NODE_ENV=production
+# Load environment from .env if present
+EnvironmentFile=-/root/virtual-office-buddy/.env
 
-# Use bunx if bun is installed, fallback to npx
-ExecStart=/usr/bin/env bunx wrangler dev --port 3000 --host 0.0.0.0 --local
-Restart=on-failure
-RestartSec=10
+ExecStart=/root/.bun/bin/bun run preview --port 3000 --host 0.0.0.0
+Restart=always
+RestartSec=5
 StandardOutput=journal
 StandardError=journal
 

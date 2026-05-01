@@ -1,4 +1,5 @@
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import "@/lib/polyfills";
 import { HermesServiceProvider } from "@/lib/hermes-context";
 import { AppLayout } from "@/components/layout/AppLayout";
 import appCss from "../styles.css?url";
