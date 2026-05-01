@@ -239,6 +239,67 @@ Then go to **Models** → select provider → enter model name → Add
 
 ---
 
+## Deployment — Access from Anywhere
+
+### ☁️ Option A — Cloudflare Pages (Free, Recommended)
+
+Deploy globally in minutes with zero server cost.
+
+1. Push this repo to GitHub
+2. Go to [Cloudflare Pages](https://pages.cloudflare.com) → Create application → Connect to Git
+3. Set build settings:
+   - **Build command:** `npm run build`
+   - **Output directory:** `.cloudflare/v3`
+4. Click **Save and Deploy** → get a `https://prism-dashboard.pages.dev` URL
+
+**Auto-deploy on every push (GitHub Actions):**
+
+Add these secrets to your GitHub repo (`Settings → Secrets`):
+
+| Secret | Where to find |
+|--------|---------------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard → My Profile → API Tokens → Create Token (use "Edit Cloudflare Workers" template) |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → right sidebar |
+
+Then every push to `main` auto-deploys via `.github/workflows/deploy-cloudflare.yml`.
+
+> **Tip:** After deploying, go to **Gateway** in the app and point it to your Hermes Agent URL (needs to be publicly accessible — use [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) to expose it for free).
+
+---
+
+### 🐳 Option B — Docker on VPS (Self-Hosted)
+
+Run everything on your own server (DigitalOcean, Oracle Cloud free tier, etc.).
+
+**Requirements:** Docker + Docker Compose installed on your VPS.
+
+```bash
+git clone https://github.com/sorawittj-hue/virtual-office-buddy.git
+cd virtual-office-buddy
+cp .env.example .env   # fill in your keys
+docker compose up -d   # builds and starts on port 3000
+```
+
+Access at `http://YOUR_VPS_IP:3000`
+
+**With a domain + SSL (nginx):**
+
+```bash
+# Uncomment the nginx block in docker-compose.yml
+# Add your domain config to nginx/prism.conf
+# Drop SSL certs in nginx/certs/
+docker compose up -d
+```
+
+**Update to latest version:**
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+---
+
 ## Scripts
 
 ```bash
