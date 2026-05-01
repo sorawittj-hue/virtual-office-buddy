@@ -11,6 +11,9 @@ export type ProviderId =
   | "fireworks"
   | "cohere"
   | "ollama"
+  | "lmstudio"
+  | "vllm"
+  | "llamacpp"
   | "huggingface"
   | "custom";
 
@@ -152,6 +155,36 @@ export const PROVIDERS: ProviderInfo[] = [
     placeholder: "nous-hermes2",
     color: "#0369a1",
     docsUrl: "https://ollama.com",
+    needsKey: false,
+    supportsStreaming: true,
+  },
+  {
+    id: "lmstudio",
+    label: "LM Studio (local)",
+    url: "http://localhost:1234/v1",
+    placeholder: "local-model",
+    color: "#6d28d9",
+    docsUrl: "https://lmstudio.ai",
+    needsKey: false,
+    supportsStreaming: true,
+  },
+  {
+    id: "vllm",
+    label: "vLLM (local)",
+    url: "http://localhost:8000/v1",
+    placeholder: "meta-llama/Llama-3.3-70B-Instruct",
+    color: "#065f46",
+    docsUrl: "https://docs.vllm.ai",
+    needsKey: false,
+    supportsStreaming: true,
+  },
+  {
+    id: "llamacpp",
+    label: "llama.cpp (local)",
+    url: "http://localhost:8080/v1",
+    placeholder: "gpt-3.5-turbo",
+    color: "#92400e",
+    docsUrl: "https://github.com/ggerganov/llama.cpp",
     needsKey: false,
     supportsStreaming: true,
   },
