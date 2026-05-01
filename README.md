@@ -245,23 +245,14 @@ Then go to **Models** → select provider → enter model name → Add
 
 Deploy globally in minutes with zero server cost. Prism uses **Cloudflare Workers** (SSR), not static Pages.
 
-**One-time setup:**
-1. Create a free account at [cloudflare.com](https://cloudflare.com)
-2. Add two secrets to your GitHub repo (`Settings → Secrets and variables → Actions`):
-
-| Secret | Where to find |
-|--------|---------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → Create Token → use **"Edit Cloudflare Workers"** template |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → right sidebar under "Account ID" |
-
-3. Push to `main` — GitHub Actions auto-deploys via `.github/workflows/deploy-cloudflare.yml`
-4. Get URL: `https://prism-dashboard.<your-subdomain>.workers.dev`
-
-**Or deploy manually:**
 ```bash
+npm install
 npm run build
-npx wrangler deploy
+npx wrangler login            # opens browser, sign in to Cloudflare
+cd dist/server && npx wrangler deploy
 ```
+
+You get a URL like `https://prism-dashboard.<your-subdomain>.workers.dev` — open it from any device.
 
 > **Tip:** After deploying, go to **Gateway** in the app and point it to your Hermes Agent URL (needs to be publicly accessible — use [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) to expose it for free).
 
