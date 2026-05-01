@@ -315,6 +315,30 @@ rm -rf node_modules package-lock.json
 bun install   # or: npm install
 ```
 
+### Docker build hangs / npm install times out
+The Docker image now uses **Bun** which is 5–10× faster than npm. If you built before this fix, force a clean rebuild:
+```bash
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+### `ENOTEMPTY` error on Windows/WSL (D: drive)
+WSL2 has known file-locking issues with drives mounted at `/mnt/d/`. Fix: clone to your WSL home directory instead:
+```bash
+cd ~                   # WSL home (~/ = /home/yourname), NOT /mnt/d/
+git clone https://github.com/sorawittj-hue/virtual-office-buddy.git
+cd virtual-office-buddy
+bun install            # or npm install
+```
+
+### npm install still slow on slow networks
+The `.npmrc` in this repo sets 5 retries and a 5-minute timeout automatically. If npm still fails, switch to Bun:
+```bash
+npm install -g bun
+bun install
+```
+
 ### Docker build fails / container exits immediately
 ```bash
 # Check logs
