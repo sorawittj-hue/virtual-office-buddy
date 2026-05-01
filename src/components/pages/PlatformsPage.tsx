@@ -1,9 +1,56 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, RefreshCw, Cloud, Copy, Check, ExternalLink, ChevronDown } from "lucide-react";
+import { Layers, RefreshCw, Cloud, Copy, Check, ExternalLink, ChevronDown, Terminal } from "lucide-react";
 import { toast } from "sonner";
 import { useHermesService } from "@/lib/hermes-context";
 import { PLATFORMS, CATEGORY_LABELS, type PlatformInfo } from "@/lib/platforms";
+
+const TELEGRAM_BRIDGE_CMD = `# 1. Set env vars (copy .env.local.example → .env)
+cp .env.local.example .env
+# Fill in TELEGRAM_BOT_TOKEN + ALLOWED_CHAT_IDS
+
+# 2. Start the bridge
+npm run telegram
+# → WebSocket bridge ready at ws://localhost:18789`;
+
+function TelegramBridgeSection({ connected }: { connected: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(TELEGRAM_BRIDGE_CMD);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="space-y-2">
+      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
+        connected
+          ? "bg-status-success/10 border border-status-success/30 text-status-success"
+          : "bg-muted/60 border border-border text-muted-foreground"
+      }`}>
+        <span className={`w-2 h-2 rounded-full shrink-0 ${connected ? "bg-status-success" : "bg-muted-foreground/50"}`} />
+        {connected ? "Telegram Bridge — Connected" : "Telegram Bridge — Not running"}
+      </div>
+      {!connected && (
+        <div className="rounded-lg border border-border overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b border-border">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Terminal className="w-3.5 h-3.5" />
+              วิธีเริ่ม Bridge
+            </div>
+            <button onClick={copy} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors">
+              {copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+          <pre className="p-3 text-xs font-mono text-foreground/80 bg-background leading-relaxed overflow-x-auto">
+            {TELEGRAM_BRIDGE_CMD.split("\n").map((line, i) => (
+              <div key={i} className={line.startsWith("#") ? "text-primary/60" : ""}>{line || " "}</div>
+            ))}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PlatformCard({
   platform,
@@ -63,6 +110,7 @@ function PlatformCard({
             className="overflow-hidden border-t border-border bg-muted/20"
           >
             <div className="p-4 space-y-3">
+              {platform.id === "telegram" && <TelegramBridgeSection connected={connected} />}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                   Environment Variables

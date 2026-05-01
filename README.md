@@ -135,6 +135,13 @@ Connect Prism to any automation platform (n8n, Zapier, Make, custom endpoints) w
 - **Bun 1.x** (recommended, faster installs) or npm/pnpm
 - **Hermes Agent** (recommended) for full real-time features
 
+> **WSL2 / Linux users:** If `node` is not found after install, nvm is not loaded in your shell. Add this to `~/.bashrc` or `~/.zshrc`:
+> ```bash
+> export NVM_DIR="$HOME/.nvm"
+> [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+> ```
+> Then run `source ~/.bashrc` and verify with `node -v`.
+
 ### 1. Clone
 
 ```bash
@@ -153,6 +160,10 @@ npm install
 ### 3. Environment variables
 
 ```bash
+# Local self-hosted (Hermes on same machine):
+cp .env.local.example .env
+
+# Full setup (Telegram bridge + OpenRouter):
 cp .env.example .env
 ```
 
@@ -259,7 +270,27 @@ You get a URL like `https://prism-dashboard.<your-subdomain>.workers.dev` — op
 
 ---
 
-### 🐳 Option B — Docker on VPS (Self-Hosted)
+### 💻 Option B — Windows (WSL2) Local
+
+Running inside WSL2 on Windows? WSL2 uses NAT, so `localhost:3000` in Windows browser won't reach the WSL2 process directly.
+
+**One-time port forwarding setup (run in PowerShell as Administrator):**
+```powershell
+# Forward Windows localhost:3000 → WSL2:3000
+$wslIp = (wsl hostname -I).Trim().Split(" ")[0]
+netsh interface portproxy add v4tov4 listenport=3000 listenaddress=0.0.0.0 connectport=3000 connectaddress=$wslIp
+
+# Verify
+netsh interface portproxy show v4tov4
+```
+
+After this, open `http://localhost:3000` in Windows browser as normal.
+
+> **Note:** WSL2's IP changes on reboot — re-run the command if it stops working. Or use [WSL2 static IP](https://learn.microsoft.com/en-us/windows/wsl/networking) to make it permanent.
+
+---
+
+### 🐳 Option C — Docker on VPS (Self-Hosted)
 
 Run everything on your own server (DigitalOcean, Oracle Cloud free tier, etc.).
 
@@ -288,6 +319,16 @@ docker compose up -d
 ```bash
 git pull
 docker compose up -d --build
+```
+
+**Run as systemd service (no Docker):**
+
+```bash
+sudo cp scripts/prism.service /etc/systemd/system/prism-dashboard.service
+# Edit User= and WorkingDirectory= in the file to match your setup
+sudo systemctl daemon-reload
+sudo systemctl enable --now prism-dashboard
+sudo journalctl -u prism-dashboard -f   # view logs
 ```
 
 ---
