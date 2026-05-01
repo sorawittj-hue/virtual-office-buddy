@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, MessageSquare, Wifi, Copy, Check, Trash2, Hash, ChevronDown } from "lucide-react";
+import {
+  Send, Bot, User, MessageSquare, Wifi, Copy, Check, Trash2,
+  Hash, ChevronDown, Search, X, BarChart2, Globe, Image, Code2, Zap,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -18,25 +21,84 @@ interface ChatMessage {
   content: string;
   timestamp: number;
   streaming?: boolean;
+  tokens?: number;
+  cost?: number;
 }
 
+// ─── Token / Cost estimation ──────────────────────────────────────────────────
+function estimateTokens(text: string): number {
+  return Math.max(1, Math.ceil(text.length / 4));
+}
+
+const MODEL_PRICE_PER_1M: Record<string, number> = {
+  "gpt-4o": 15, "gpt-4": 60, "gpt-3.5": 1.5,
+  "claude-3-5-sonnet": 15, "claude-sonnet": 15, "claude-3-opus": 75, "claude-3-haiku": 1.25,
+  "claude-haiku": 1.25, "gemini-2.0-flash": 0.3, "gemini-1.5-pro": 10.5,
+  "gemini-1.5-flash": 0.075, "llama-3.3": 0.59, "llama-3.1": 0.52,
+  "mistral-large": 6, "mistral-small": 0.6, "deepseek-r1": 2.19, "deepseek-v3": 0.27,
+  "grok-2": 15, "command-r-plus": 2.5, "qwen": 0.4, "hermes": 0,
+};
+
+function estimateCost(tokens: number, modelId: string): number {
+  const key = Object.keys(MODEL_PRICE_PER_1M).find((k) =>
+    modelId.toLowerCase().includes(k)
+  );
+  const pricePerM = key !== undefined ? MODEL_PRICE_PER_1M[key] : 1;
+  return (tokens / 1_000_000) * pricePerM;
+}
+
+function formatCost(usd: number): string {
+  if (usd === 0) return "free";
+  if (usd < 0.0001) return "<$0.0001";
+  return `$${usd.toFixed(4)}`;
+}
+
+// ─── Slash commands ───────────────────────────────────────────────────────────
+const SLASH_COMMANDS = [
+  { cmd: "/clear",  desc: "ล้างข้อความทั้งหมด",         icon: Trash2 },
+  { cmd: "/new",    desc: "เริ่ม session ใหม่",           icon: MessageSquare },
+  { cmd: "/help",   desc: "แสดงคำสั่งทั้งหมด",           icon: Hash },
+  { cmd: "/web",    desc: "ค้นหาเว็บ <query>",            icon: Globe },
+  { cmd: "/image",  desc: "สร้างภาพ <prompt>",           icon: Image },
+  { cmd: "/code",   desc: "เขียนโค้ด <task>",             icon: Code2 },
+  { cmd: "/usage",  desc: "แสดงสถิติ token / cost",       icon: BarChart2 },
+];
+
+const QUICK_COMMANDS = ["ส่งอีเมล", "นัดประชุม", "ค้นหาข้อมูล", "สรุปข่าว", "สร้างรายงาน"];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function loadMessages(): ChatMessage[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch { return []; }
+}
+
+function saveMessages(msgs: ChatMessage[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs.slice(-MAX_STORED)));
+  } catch { /* ignore */ }
+}
+
+function getActiveModelId(): string {
+  try {
+    const stored = JSON.parse(localStorage.getItem("hermes-models") || "[]");
+    return stored.find((m: any) => m.isDefault)?.id ?? "unknown";
+  } catch { return "unknown"; }
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
-      onClick={() => {
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }}
+      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
       className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted transition-all"
       title="คัดลอก"
     >
-      {copied ? (
-        <Check className="w-3.5 h-3.5 text-status-success" />
-      ) : (
-        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-      )}
+      {copied
+        ? <Check className="w-3.5 h-3.5 text-status-success" />
+        : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
     </button>
   );
 }
@@ -47,74 +109,39 @@ function MarkdownContent({ content }: { content: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          code({
-            className,
-            children,
-            ...props
-          }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) {
+          code({ className, children, ...props }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) {
             const match = /language-(\w+)/.exec(className || "");
-            if (!match) {
-              return (
-                <code
-                  className="px-1.5 py-0.5 rounded-md bg-muted/60 font-mono text-xs border border-border"
-                  {...props}
-                >
-                  {children}
-                </code>
-              );
-            }
+            if (!match) return (
+              <code className="px-1.5 py-0.5 rounded-md bg-muted/60 font-mono text-xs border border-border" {...props}>
+                {children}
+              </code>
+            );
             return (
-              <SyntaxHighlighter
-                style={oneDark}
-                language={match[1]}
-                PreTag="div"
-                className="!rounded-xl !text-xs !my-2"
-              >
+              <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div" className="!rounded-xl !text-xs !my-2">
                 {String(children).replace(/\n$/, "")}
               </SyntaxHighlighter>
             );
           },
           p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-sm">{children}</p>,
-          ul: ({ children }) => (
-            <ul className="mb-2 pl-4 list-disc space-y-0.5 text-sm">{children}</ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="mb-2 pl-4 list-decimal space-y-0.5 text-sm">{children}</ol>
-          ),
+          ul: ({ children }) => <ul className="mb-2 pl-4 list-disc space-y-0.5 text-sm">{children}</ul>,
+          ol: ({ children }) => <ol className="mb-2 pl-4 list-decimal space-y-0.5 text-sm">{children}</ol>,
           li: ({ children }) => <li>{children}</li>,
           h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3">{children}</h1>,
           h2: ({ children }) => <h2 className="text-sm font-bold mb-1.5 mt-3">{children}</h2>,
           h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-2">{children}</h3>,
           blockquote: ({ children }) => (
-            <blockquote className="pl-3 border-l-2 border-primary/50 text-muted-foreground italic mb-2 text-sm">
-              {children}
-            </blockquote>
+            <blockquote className="pl-3 border-l-2 border-primary/50 text-muted-foreground italic mb-2 text-sm">{children}</blockquote>
           ),
           a: ({ children, href }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline underline-offset-2"
-            >
-              {children}
-            </a>
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">{children}</a>
           ),
           table: ({ children }) => (
             <div className="overflow-x-auto mb-2 rounded-lg border border-border">
               <table className="text-xs border-collapse w-full">{children}</table>
             </div>
           ),
-          th: ({ children }) => (
-            <th className="px-3 py-1.5 bg-muted font-semibold text-left border-b border-border text-xs">
-              {children}
-            </th>
-          ),
-          td: ({ children }) => (
-            <td className="px-3 py-1.5 border-b border-border last:border-b-0 text-xs">
-              {children}
-            </td>
-          ),
+          th: ({ children }) => <th className="px-3 py-1.5 bg-muted font-semibold text-left border-b border-border text-xs">{children}</th>,
+          td: ({ children }) => <td className="px-3 py-1.5 border-b border-border last:border-b-0 text-xs">{children}</td>,
           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
           hr: () => <hr className="border-border my-2" />,
         }}
@@ -125,31 +152,6 @@ function MarkdownContent({ content }: { content: string }) {
   );
 }
 
-const SLASH_COMMANDS = [
-  { cmd: "/clear", desc: "ล้างข้อความทั้งหมด" },
-  { cmd: "/new", desc: "เริ่ม session ใหม่" },
-  { cmd: "/help", desc: "แสดงคำสั่งทั้งหมด" },
-];
-
-const QUICK_COMMANDS = ["ส่งอีเมล", "นัดประชุม", "ค้นหาข้อมูล", "สรุปข่าว", "สร้างรายงาน"];
-
-function loadMessages(): ChatMessage[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveMessages(msgs: ChatMessage[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs.slice(-MAX_STORED)));
-  } catch {
-    // ignore storage errors
-  }
-}
-
 function ModelPickerInline() {
   const [open, setOpen] = useState(false);
   const [models, setModels] = useState<{ id: string; name: string; isDefault: boolean }[]>([]);
@@ -158,9 +160,7 @@ function ModelPickerInline() {
     try {
       const stored = JSON.parse(localStorage.getItem("hermes-models") || "[]");
       setModels(stored.map((m: any) => ({ id: m.id, name: m.name, isDefault: m.isDefault })));
-    } catch {
-      setModels([]);
-    }
+    } catch { setModels([]); }
   }, [open]);
 
   const active = models.find((m) => m.isDefault);
@@ -174,9 +174,7 @@ function ModelPickerInline() {
       setModels(next.map((m: any) => ({ id: m.id, name: m.name, isDefault: m.isDefault })));
       toast.success(`สลับไป ${next.find((m: any) => m.id === id)?.name}`);
       setOpen(false);
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   };
 
   return (
@@ -207,14 +205,27 @@ function ModelPickerInline() {
   );
 }
 
+// ─── Token badge shown under assistant messages ───────────────────────────────
+function TokenBadge({ tokens, cost }: { tokens: number; cost: number }) {
+  return (
+    <div className="flex items-center gap-1.5 px-1">
+      <Zap className="w-2.5 h-2.5 text-muted-foreground/50" />
+      <span className="text-[10px] text-muted-foreground/60">
+        ~{tokens.toLocaleString()} tokens · {formatCost(cost)}
+      </span>
+    </div>
+  );
+}
+
+// ─── Welcome message ──────────────────────────────────────────────────────────
 const WELCOME: ChatMessage = {
   id: "welcome",
   role: "assistant",
-  content:
-    "สวัสดีครับ! ผม **Hermes** พนักงาน AI ของคุณ พร้อมรับคำสั่งได้เลยครับ 🙂\n\nพิมพ์ `/help` เพื่อดูคำสั่งที่รองรับ หรือส่งคำสั่งงานได้เลย!",
+  content: "สวัสดีครับ! ผม **Hermes** พนักงาน AI ของคุณ พร้อมรับคำสั่งได้เลยครับ 🙂\n\nพิมพ์ `/help` เพื่อดูคำสั่งที่รองรับ หรือส่งคำสั่งงานได้เลย!",
   timestamp: Date.now(),
 };
 
+// ─── Main component ───────────────────────────────────────────────────────────
 export function ChatPage() {
   const { service, wsState } = useHermesService();
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -224,17 +235,18 @@ export function ChatPage() {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [sessionTokens, setSessionTokens] = useState(0);
+  const [sessionCost, setSessionCost] = useState(0);
   const streamingIdRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const isConnected = wsState?.status === "connected";
 
-  // Persist messages
-  useEffect(() => {
-    saveMessages(messages.filter((m) => !m.streaming));
-  }, [messages]);
+  useEffect(() => { saveMessages(messages.filter((m) => !m.streaming)); }, [messages]);
 
-  // Subscribe to service events
   useEffect(() => {
     const unsub = service.subscribe((event) => {
       if (event.type === "chat-stream") {
@@ -248,19 +260,31 @@ export function ChatPage() {
           ]);
         } else if (!done && streamingIdRef.current === id) {
           setMessages((prev) =>
-            prev.map((m) => (m.id === id ? { ...m, content: m.content + token } : m)),
+            prev.map((m) => (m.id === id ? { ...m, content: m.content + token } : m))
           );
         } else if (done && streamingIdRef.current === id) {
           streamingIdRef.current = null;
           setIsStreaming(false);
-          setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, streaming: false } : m)));
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.id !== id) return m;
+              const tokens = estimateTokens(m.content);
+              const cost = estimateCost(tokens, getActiveModelId());
+              setSessionTokens((t) => t + tokens);
+              setSessionCost((c) => c + cost);
+              return { ...m, streaming: false, tokens, cost };
+            })
+          );
         }
       } else if (event.type === "task-complete") {
-        const result = event.result;
-        if (result) {
+        if (event.result) {
+          const tokens = estimateTokens(event.result);
+          const cost = estimateCost(tokens, getActiveModelId());
+          setSessionTokens((t) => t + tokens);
+          setSessionCost((c) => c + cost);
           setMessages((prev) => [
             ...prev,
-            { id: crypto.randomUUID(), role: "assistant", content: result, timestamp: Date.now() },
+            { id: crypto.randomUUID(), role: "assistant", content: event.result, timestamp: Date.now(), tokens, cost },
           ]);
         }
       }
@@ -268,47 +292,96 @@ export function ChatPage() {
     return () => unsub();
   }, [service]);
 
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isStreaming]);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isStreaming]);
+    if (showSearch) searchRef.current?.focus();
+  }, [showSearch]);
+
+  const filteredMessages = searchQuery.trim()
+    ? messages.filter((m) => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages;
 
   const handleSlashCommand = useCallback((cmd: string): boolean => {
-    if (cmd === "/clear") {
+    const [base, ...rest] = cmd.split(" ");
+    const args = rest.join(" ").trim();
+
+    if (base === "/clear") {
       setMessages([]);
       localStorage.removeItem(STORAGE_KEY);
       toast.success("ล้างข้อความแล้ว");
       return true;
     }
-    if (cmd === "/new") {
-      setMessages([
-        {
-          ...WELCOME,
-          id: crypto.randomUUID(),
-          content: "เริ่ม session ใหม่แล้วครับ! มีอะไรให้ช่วยไหม? 🙂",
-          timestamp: Date.now(),
-        },
-      ]);
+    if (base === "/new") {
+      setMessages([{ ...WELCOME, id: crypto.randomUUID(), content: "เริ่ม session ใหม่แล้วครับ! มีอะไรให้ช่วยไหม? 🙂", timestamp: Date.now() }]);
+      setSessionTokens(0);
+      setSessionCost(0);
       toast.success("เริ่ม session ใหม่");
       return true;
     }
-    if (cmd === "/help") {
+    if (base === "/help") {
       const helpText = [
-        "**Slash commands:**",
+        "**Slash Commands:**",
         ...SLASH_COMMANDS.map((c) => `- \`${c.cmd}\` — ${c.desc}`),
         "",
-        "**คำสั่งงาน (ส่งตรงๆ ได้เลย):**",
-        "ส่งอีเมล · นัดประชุม · ค้นหาข้อมูล · สร้างรายงาน · ตรวจสอบงาน · ตอบลูกค้า · สรุปข่าว · จัดการไฟล์",
+        "**คำสั่งงานด่วน:**",
+        "ส่งอีเมล · นัดประชุม · ค้นหาข้อมูล · สร้างรายงาน · ตรวจสอบงาน · สรุปข่าว · จัดการไฟล์",
         "",
-        "หรือพิมพ์อะไรก็ได้ — Hermes จะตอบให้!",
+        "พิมพ์อะไรก็ได้ — Hermes ตอบให้เลย!",
       ].join("\n");
-      setMessages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: helpText, timestamp: Date.now() },
-      ]);
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: helpText, timestamp: Date.now() }]);
+      return true;
+    }
+    if (base === "/usage") {
+      const modelId = getActiveModelId();
+      const msgCount = messages.filter((m) => m.role === "assistant" && m.id !== "welcome").length;
+      const usageText = [
+        "**Session Usage Stats** 📊",
+        `- **Model:** \`${modelId}\``,
+        `- **Messages:** ${msgCount} replies`,
+        `- **Total tokens (est.):** ~${sessionTokens.toLocaleString()} tokens`,
+        `- **Estimated cost:** ${formatCost(sessionCost)}`,
+        "",
+        sessionCost === 0 ? "_This model is free or local — no charges!_ 🎉" : "_Estimates based on output tokens only._",
+      ].join("\n");
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: usageText, timestamp: Date.now() }]);
+      return true;
+    }
+    if (base === "/web") {
+      if (!args) {
+        toast.error("ระบุ query: /web <ค้นหาอะไร>");
+        return true;
+      }
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: cmd, timestamp: Date.now() }]);
+      service.sendChatMessage
+        ? service.sendChatMessage(`ค้นหาข้อมูลจากเว็บเกี่ยวกับ: ${args}`)
+        : service.simulateTelegramWebhook(`ค้นหาข้อมูลจากเว็บเกี่ยวกับ: ${args}`);
+      return true;
+    }
+    if (base === "/image") {
+      if (!args) {
+        toast.error("ระบุ prompt: /image <คำบรรยายภาพ>");
+        return true;
+      }
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: cmd, timestamp: Date.now() }]);
+      service.sendChatMessage
+        ? service.sendChatMessage(`สร้างภาพ: ${args}`)
+        : service.simulateTelegramWebhook(`สร้างภาพ: ${args}`);
+      return true;
+    }
+    if (base === "/code") {
+      if (!args) {
+        toast.error("ระบุ task: /code <งานที่ต้องการ>");
+        return true;
+      }
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: cmd, timestamp: Date.now() }]);
+      service.sendChatMessage
+        ? service.sendChatMessage(`เขียนโค้ดสำหรับ: ${args} (ตอบเป็น code block พร้อม syntax highlighting)`)
+        : service.simulateTelegramWebhook(`เขียนโค้ดสำหรับ: ${args}`);
       return true;
     }
     return false;
-  }, []);
+  }, [messages, service, sessionTokens, sessionCost]);
 
   const send = useCallback(() => {
     const text = input.trim();
@@ -321,10 +394,7 @@ export function ChatPage() {
       if (handled) return;
     }
 
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: "user", content: text, timestamp: Date.now() },
-    ]);
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: text, timestamp: Date.now() }]);
 
     if (service.sendChatMessage) {
       service.sendChatMessage(text);
@@ -345,6 +415,17 @@ export function ChatPage() {
     return new Date(ts).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
   }
 
+  function highlightMatch(text: string) {
+    if (!searchQuery.trim()) return text;
+    const idx = text.toLowerCase().indexOf(searchQuery.toLowerCase());
+    if (idx === -1) return text;
+    return (
+      text.slice(0, idx) +
+      `**${text.slice(idx, idx + searchQuery.length)}**` +
+      text.slice(idx + searchQuery.length)
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -354,11 +435,7 @@ export function ChatPage() {
             <div className="w-9 h-9 rounded-full bg-hermes/20 border-2 border-hermes flex items-center justify-center text-lg">
               🤖
             </div>
-            <span
-              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
-                isConnected ? "bg-status-success" : "bg-muted-foreground/50"
-              }`}
-            />
+            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${isConnected ? "bg-status-success" : "bg-muted-foreground/50"}`} />
           </div>
           <div>
             <h1 className="font-bold text-foreground text-sm">Hermes</h1>
@@ -368,7 +445,23 @@ export function ChatPage() {
           </div>
           <ModelPickerInline />
         </div>
+
+        {/* Header actions */}
         <div className="flex items-center gap-1.5">
+          {/* Session usage badge */}
+          {sessionTokens > 0 && (
+            <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg bg-muted/50 text-[10px] text-muted-foreground">
+              <Zap className="w-2.5 h-2.5" />
+              <span>~{sessionTokens.toLocaleString()} · {formatCost(sessionCost)}</span>
+            </div>
+          )}
+          <button
+            onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchQuery(""); }}
+            className={`p-1.5 rounded-lg transition-colors ${showSearch ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground hover:text-foreground"}`}
+            title="ค้นหาข้อความ"
+          >
+            <Search className="w-4 h-4" />
+          </button>
           <button
             onClick={() => {
               if (messages.length <= 1 || confirm("ล้างข้อความทั้งหมดใช่ไหม?")) {
@@ -393,10 +486,44 @@ export function ChatPage() {
         </div>
       </div>
 
+      {/* Search bar */}
+      <AnimatePresence>
+        {showSearch && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden border-b border-border bg-muted/30"
+          >
+            <div className="px-4 py-2 flex items-center gap-2">
+              <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ค้นหาในประวัติข้อความ…"
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="p-0.5 rounded text-muted-foreground hover:text-foreground">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {searchQuery && (
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {filteredMessages.length} ผลลัพธ์
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         <AnimatePresence initial={false}>
-          {messages.map((msg) => (
+          {filteredMessages.map((msg) => (
             <motion.div
               key={msg.id}
               initial={{ opacity: 0, y: 10 }}
@@ -404,37 +531,27 @@ export function ChatPage() {
               transition={{ type: "spring", stiffness: 300, damping: 28 }}
               className={`flex gap-3 group ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
             >
-              <div
-                className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center mt-1 ${
-                  msg.role === "assistant"
-                    ? "bg-hermes/20 border border-hermes/40"
-                    : "bg-primary/20 border border-primary/40"
-                }`}
-              >
-                {msg.role === "assistant" ? (
-                  <Bot className="w-3.5 h-3.5 text-hermes" />
-                ) : (
-                  <User className="w-3.5 h-3.5 text-primary" />
-                )}
+              <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center mt-1 ${
+                msg.role === "assistant"
+                  ? "bg-hermes/20 border border-hermes/40"
+                  : "bg-primary/20 border border-primary/40"
+              }`}>
+                {msg.role === "assistant"
+                  ? <Bot className="w-3.5 h-3.5 text-hermes" />
+                  : <User className="w-3.5 h-3.5 text-primary" />}
               </div>
 
-              <div
-                className={`max-w-[78%] flex flex-col gap-1 ${
-                  msg.role === "user" ? "items-end" : "items-start"
-                }`}
-              >
-                <div
-                  className={`px-4 py-3 rounded-2xl text-sm ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-tr-sm"
-                      : "bg-card border border-border text-card-foreground rounded-tl-sm"
-                  }`}
-                >
+              <div className={`max-w-[78%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                <div className={`px-4 py-3 rounded-2xl text-sm ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-tr-sm"
+                    : "bg-card border border-border text-card-foreground rounded-tl-sm"
+                }`}>
                   {msg.role === "user" ? (
                     <span className="leading-relaxed whitespace-pre-wrap">{msg.content}</span>
                   ) : (
                     <div className="min-w-0">
-                      <MarkdownContent content={msg.content} />
+                      <MarkdownContent content={searchQuery ? highlightMatch(msg.content) : msg.content} />
                       {msg.streaming && (
                         <motion.span
                           className="inline-block w-2 h-4 bg-hermes/70 rounded-sm ml-0.5 align-middle"
@@ -446,11 +563,13 @@ export function ChatPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 px-1">
-                  <span className="text-[10px] text-muted-foreground">
-                    {formatTime(msg.timestamp)}
-                  </span>
+                  <span className="text-[10px] text-muted-foreground">{formatTime(msg.timestamp)}</span>
                   {!msg.streaming && <CopyButton text={msg.content} />}
                 </div>
+                {/* Token / cost badge for assistant messages */}
+                {msg.role === "assistant" && !msg.streaming && msg.tokens && msg.tokens > 0 && (
+                  <TokenBadge tokens={msg.tokens} cost={msg.cost ?? 0} />
+                )}
               </div>
             </motion.div>
           ))}
@@ -466,10 +585,7 @@ export function ChatPage() {
             {QUICK_COMMANDS.map((cmd) => (
               <button
                 key={cmd}
-                onClick={() => {
-                  setInput(cmd);
-                  inputRef.current?.focus();
-                }}
+                onClick={() => { setInput(cmd); inputRef.current?.focus(); }}
                 className="px-2.5 py-1 rounded-full bg-muted text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border border-border"
               >
                 {cmd}
@@ -490,14 +606,10 @@ export function ChatPage() {
               {filteredSlash.map((c) => (
                 <button
                   key={c.cmd}
-                  onClick={() => {
-                    setInput(c.cmd);
-                    setShowSlashMenu(false);
-                    inputRef.current?.focus();
-                  }}
+                  onClick={() => { setInput(c.cmd + (c.cmd === "/clear" || c.cmd === "/new" || c.cmd === "/help" || c.cmd === "/usage" ? "" : " ")); setShowSlashMenu(false); inputRef.current?.focus(); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-muted transition-colors text-left"
                 >
-                  <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <c.icon className="w-3.5 h-3.5 text-primary shrink-0" />
                   <span className="text-sm font-mono text-foreground">{c.cmd}</span>
                   <span className="text-xs text-muted-foreground ml-1">{c.desc}</span>
                 </button>
@@ -515,10 +627,7 @@ export function ChatPage() {
               value={input}
               onChange={handleInputChange}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
                 if (e.key === "Escape") setShowSlashMenu(false);
               }}
               placeholder={isStreaming ? "Hermes กำลังตอบ…" : "พิมพ์คำสั่งหรือ /slash…"}
