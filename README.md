@@ -1,12 +1,12 @@
-# Virtual Office Buddy
+# Prism — Dashboard for Hermes Agent
 
-> GUI Dashboard สำหรับ [Hermes Agent](https://github.com/NousResearch/hermes-agent) — ควบคุม AI assistant ผ่านหน้าเว็บสวยงาม **เหนือกว่า Hermes Desktop** ใน 7 ด้านหลัก
+> The open-source web dashboard for [Hermes Agent](https://github.com/NousResearch/hermes-agent) — control your AI assistant beautifully from any browser. **No install required.**
 
-![Stack](https://img.shields.io/badge/React-19-61dafb?logo=react) ![Stack](https://img.shields.io/badge/TanStack_Start-1.x-ff4154) ![Stack](https://img.shields.io/badge/Tailwind_CSS-4.x-38bdf8?logo=tailwindcss) ![Stack](https://img.shields.io/badge/Three.js-r184-black?logo=threedotjs) ![Stack](https://img.shields.io/badge/Providers-17-7c3aed) ![Stack](https://img.shields.io/badge/Platforms-25-10b981)
+![Stack](https://img.shields.io/badge/React-19-61dafb?logo=react) ![Stack](https://img.shields.io/badge/TanStack_Start-1.x-ff4154) ![Stack](https://img.shields.io/badge/Tailwind_CSS-4.x-38bdf8?logo=tailwindcss) ![Stack](https://img.shields.io/badge/Three.js-r184-black?logo=threedotjs) ![Stack](https://img.shields.io/badge/Providers-17-7c3aed) ![Stack](https://img.shields.io/badge/Platforms-25-10b981) ![Stack](https://img.shields.io/badge/Guardrails-8_rules-ef4444)
 
 ---
 
-## ทำไมถึงเลือก Virtual Office Buddy?
+## ทำไมถึงเลือก Prism?
 
 | ฟีเจอร์ | Hermes Desktop | Virtual Office Buddy |
 |---------|:-:|:-:|
