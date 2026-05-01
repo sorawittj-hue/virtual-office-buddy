@@ -241,27 +241,27 @@ Then go to **Models** → select provider → enter model name → Add
 
 ## Deployment — Access from Anywhere
 
-### ☁️ Option A — Cloudflare Pages (Free, Recommended)
+### ☁️ Option A — Cloudflare Workers (Free, Recommended)
 
-Deploy globally in minutes with zero server cost.
+Deploy globally in minutes with zero server cost. Prism uses **Cloudflare Workers** (SSR), not static Pages.
 
-1. Push this repo to GitHub
-2. Go to [Cloudflare Pages](https://pages.cloudflare.com) → Create application → Connect to Git
-3. Set build settings:
-   - **Build command:** `npm run build`
-   - **Output directory:** `.cloudflare/v3`
-4. Click **Save and Deploy** → get a `https://prism-dashboard.pages.dev` URL
-
-**Auto-deploy on every push (GitHub Actions):**
-
-Add these secrets to your GitHub repo (`Settings → Secrets`):
+**One-time setup:**
+1. Create a free account at [cloudflare.com](https://cloudflare.com)
+2. Add two secrets to your GitHub repo (`Settings → Secrets and variables → Actions`):
 
 | Secret | Where to find |
 |--------|---------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard → My Profile → API Tokens → Create Token (use "Edit Cloudflare Workers" template) |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → right sidebar |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → Create Token → use **"Edit Cloudflare Workers"** template |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → right sidebar under "Account ID" |
 
-Then every push to `main` auto-deploys via `.github/workflows/deploy-cloudflare.yml`.
+3. Push to `main` — GitHub Actions auto-deploys via `.github/workflows/deploy-cloudflare.yml`
+4. Get URL: `https://prism-dashboard.<your-subdomain>.workers.dev`
+
+**Or deploy manually:**
+```bash
+npm run build
+npx wrangler deploy
+```
 
 > **Tip:** After deploying, go to **Gateway** in the app and point it to your Hermes Agent URL (needs to be publicly accessible — use [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) to expose it for free).
 
