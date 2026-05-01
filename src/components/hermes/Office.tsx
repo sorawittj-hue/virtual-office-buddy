@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Wifi } from "lucide-react";
+import { Trophy, Wifi, Layers } from "lucide-react";
 import { Toaster } from "sonner";
 import { useHermes } from "@/hooks/use-hermes";
 import { useHermesService } from "@/lib/hermes-context";
 import { Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { ChatBubble } from "./ChatBubble";
 import { StatusPanel } from "./StatusPanel";
 import { TestingTools } from "./TestingTools";
@@ -11,9 +12,17 @@ import { IsometricScene } from "./IsometricScene";
 
 export function Office() {
   const hermes = useHermes();
-  const { wsState } = useHermesService();
+  const { wsState, service } = useHermesService();
   const isWorking = hermes.status === "working";
   const isConnected = wsState?.status === "connected";
+  const [platformCount, setPlatformCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isConnected || !("fetchPlatforms" in service)) return;
+    (service as any).fetchPlatforms().then((p: Record<string, { connected: boolean }>) => {
+      setPlatformCount(Object.values(p).filter((v) => v.connected).length);
+    }).catch(() => {});
+  }, [isConnected, service]);
 
   return (
     <>
@@ -35,7 +44,7 @@ export function Office() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-status-success/15 border border-status-success/30 text-xs font-bold text-status-success"
                 >
                   <Trophy className="w-3.5 h-3.5" />
-                  {hermes.totalCompleted} งานสำเร็จ
+                  {hermes.totalCompleted} completed
                 </motion.div>
               )}
               {isConnected ? (
@@ -98,18 +107,28 @@ export function Office() {
                       {hermes.status === "working" && (
                         <span className="w-2 h-2 rounded-full bg-white/70 animate-pulse" />
                       )}
-                      {hermes.status === "working" ? "กำลังทำงาน…"
-                        : hermes.status === "success" ? "✓ เสร็จแล้ว"
+                      {hermes.status === "working"
+                        ? (hermes.activeTask ? hermes.activeTask.command.slice(0, 40) : "Working…")
+                        : hermes.status === "success" ? "✓ Done"
                         : "✕ Error"}
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Agent count */}
+              {/* Platform / connection badge */}
               <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/70 text-background text-xs font-bold backdrop-blur-sm border border-background/10">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                3 Agents
+                {isConnected ? (
+                  <>
+                    <Layers className="w-3 h-3 text-green-400" />
+                    {platformCount !== null ? `${platformCount} platforms` : "Connected"}
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                    Mock Mode
+                  </>
+                )}
               </div>
             </section>
 
