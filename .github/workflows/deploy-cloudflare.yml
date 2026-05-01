@@ -23,16 +23,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (Vite → .cloudflare/v3/)
+      - name: Build (Vite → dist/server/ + dist/client/)
         run: npm run build
-
-      - name: Show build output
-        run: ls -la .cloudflare/v3/ 2>/dev/null && echo "---" && ls -la .cloudflare/ 2>/dev/null || echo "No .cloudflare output found"
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # Deploy the pre-built Vite output without re-bundling
-          command: deploy .cloudflare/v3/index.js --no-bundle --name=prism-dashboard --compatibility-date=2025-09-24 --compatibility-flags=nodejs_compat
+          # The Cloudflare Vite plugin generates dist/server/wrangler.json
+          # with all settings (no_bundle, assets dir, main entry) ready to deploy.
+          workingDirectory: dist/server
+          command: deploy
