@@ -18,6 +18,7 @@ import { Route as PlatformsRouteImport } from './routes/platforms'
 import { Route as PersonaRouteImport } from './routes/persona'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as MemoryRouteImport } from './routes/memory'
+import { Route as KanbanRouteImport } from './routes/kanban'
 import { Route as GatewayRouteImport } from './routes/gateway'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AgentsRouteImport } from './routes/agents'
@@ -68,6 +69,11 @@ const MemoryRoute = MemoryRouteImport.update({
   path: '/memory',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KanbanRoute = KanbanRouteImport.update({
+  id: '/kanban',
+  path: '/kanban',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GatewayRoute = GatewayRouteImport.update({
   id: '/gateway',
   path: '/gateway',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AgentsRoute
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
+  '/kanban': typeof KanbanRoute
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/agents': typeof AgentsRoute
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
+  '/kanban': typeof KanbanRoute
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/agents': typeof AgentsRoute
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
+  '/kanban': typeof KanbanRoute
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
   '/persona': typeof PersonaRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/gateway'
+    | '/kanban'
     | '/memory'
     | '/models'
     | '/persona'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/gateway'
+    | '/kanban'
     | '/memory'
     | '/models'
     | '/persona'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/gateway'
+    | '/kanban'
     | '/memory'
     | '/models'
     | '/persona'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   AgentsRoute: typeof AgentsRoute
   ChatRoute: typeof ChatRoute
   GatewayRoute: typeof GatewayRoute
+  KanbanRoute: typeof KanbanRoute
   MemoryRoute: typeof MemoryRoute
   ModelsRoute: typeof ModelsRoute
   PersonaRoute: typeof PersonaRoute
@@ -201,6 +214,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/kanban': {
+      id: '/kanban'
+      path: '/kanban'
+      fullPath: '/kanban'
+      preLoaderRoute: typeof KanbanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tools': {
       id: '/tools'
       path: '/tools'
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentsRoute: AgentsRoute,
   ChatRoute: ChatRoute,
   GatewayRoute: GatewayRoute,
+  KanbanRoute: KanbanRoute,
   MemoryRoute: MemoryRoute,
   ModelsRoute: ModelsRoute,
   PersonaRoute: PersonaRoute,
