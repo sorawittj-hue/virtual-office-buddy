@@ -1,7 +1,124 @@
 import { useState, useEffect } from "react";
-import { Settings, Moon, Sun, Bell, Globe, Trash2, Check } from "lucide-react";
+import { Settings, Moon, Sun, Bell, Globe, Trash2, Check, ShieldCheck, ShieldAlert, Shield } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  GUARDRAIL_RULES,
+  loadGuardrailConfig,
+  saveGuardrailConfig,
+} from "@/lib/guardrails";
+import { toast } from "sonner";
 
+// ─── Guardrails section ───────────────────────────────────────────────────────
+function GuardrailsSection() {
+  const [config, setConfig] = useState(loadGuardrailConfig);
+
+  const toggle = (id: string) => {
+    setConfig((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      saveGuardrailConfig(next);
+      toast.success(next[id] ? `เปิด ${id} แล้ว` : `ปิด ${id} แล้ว`);
+      return next;
+    });
+  };
+
+  const enabledCount = Object.values(config).filter(Boolean).length;
+  const totalCount = GUARDRAIL_RULES.length;
+
+  const categories = ["input", "output", "cost"] as const;
+  const catLabel: Record<string, string> = { input: "Input Guards", output: "Output Guards", cost: "Cost Controls" };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15 }}
+      className="rounded-2xl bg-card border border-border overflow-hidden"
+    >
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-status-success" />
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Guardrails</span>
+        </div>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+          enabledCount === totalCount
+            ? "bg-status-success/10 text-status-success"
+            : enabledCount === 0
+            ? "bg-destructive/10 text-destructive"
+            : "bg-yellow-500/10 text-yellow-500"
+        }`}>
+          {enabledCount} / {totalCount} active
+        </span>
+      </div>
+
+      {/* Description */}
+      <div className="px-4 py-3 bg-muted/20 border-b border-border">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Guardrails ตรวจสอบข้อความ <strong>ก่อนส่ง</strong> และ <strong>หลังรับ</strong> จาก AI
+          — ป้องกัน prompt injection, PII leakage, harmful content และ cost overrun
+          ทุกอย่างทำงานใน browser ไม่ส่งข้อมูลไปนอก
+        </p>
+      </div>
+
+      {/* Rules by category */}
+      {categories.map((cat) => {
+        const rules = GUARDRAIL_RULES.filter((r) => r.category === cat);
+        if (rules.length === 0) return null;
+        return (
+          <div key={cat}>
+            <div className="px-4 py-2 border-b border-border bg-muted/10">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {catLabel[cat]}
+              </span>
+            </div>
+            <div className="divide-y divide-border">
+              {rules.map((rule) => {
+                const isEnabled = config[rule.id] ?? rule.defaultEnabled;
+                return (
+                  <div key={rule.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <div className="shrink-0">
+                      {rule.severity === "block" ? (
+                        <ShieldAlert className={`w-4 h-4 ${isEnabled ? "text-destructive" : "text-muted-foreground/40"}`} />
+                      ) : (
+                        <Shield className={`w-4 h-4 ${isEnabled ? "text-yellow-500" : "text-muted-foreground/40"}`} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">{rule.name}</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${
+                          rule.severity === "block"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-yellow-500/10 text-yellow-500"
+                        }`}>
+                          {rule.severity}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{rule.desc}</div>
+                    </div>
+                    {/* Toggle */}
+                    <button
+                      onClick={() => toggle(rule.id)}
+                      className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${
+                        isEnabled ? "bg-primary" : "bg-muted-foreground/30"
+                      }`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                        isEnabled ? "translate-x-4" : "translate-x-0"
+                      }`} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </motion.div>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export function SettingsPage() {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [notifications, setNotifications] = useState(true);
@@ -9,13 +126,8 @@ export function SettingsPage() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (dark) {
-      root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    if (dark) { root.classList.add("dark"); localStorage.setItem("theme", "dark"); }
+    else { root.classList.remove("dark"); localStorage.setItem("theme", "light"); }
   }, [dark]);
 
   const save = () => {
@@ -27,6 +139,7 @@ export function SettingsPage() {
   const sections = [
     {
       title: "Appearance",
+      delay: 0,
       items: [
         {
           icon: dark ? Moon : Sun,
@@ -35,7 +148,7 @@ export function SettingsPage() {
           control: (
             <button
               onClick={() => setDark((d) => !d)}
-              className={`relative w-10 rounded-full transition-colors`}
+              className="relative w-10 rounded-full transition-colors"
               style={{ height: "22px", background: dark ? "var(--color-primary)" : "var(--color-muted-foreground)" + "40" }}
             >
               <span
@@ -49,6 +162,7 @@ export function SettingsPage() {
     },
     {
       title: "Notifications",
+      delay: 0.07,
       items: [
         {
           icon: Bell,
@@ -71,6 +185,7 @@ export function SettingsPage() {
     },
     {
       title: "Language",
+      delay: 0.14,
       items: [
         {
           icon: Globe,
@@ -97,12 +212,12 @@ export function SettingsPage() {
         <p className="text-sm text-muted-foreground mt-1">ตั้งค่า Web App</p>
       </div>
 
-      {sections.map(({ title, items }, si) => (
+      {sections.map(({ title, delay, items }) => (
         <motion.div
           key={title}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: si * 0.07 }}
+          transition={{ delay }}
           className="rounded-2xl bg-card border border-border overflow-hidden"
         >
           <div className="px-4 py-3 border-b border-border">
@@ -122,6 +237,9 @@ export function SettingsPage() {
           </div>
         </motion.div>
       ))}
+
+      {/* Guardrails section */}
+      <GuardrailsSection />
 
       <div className="flex items-center gap-3">
         <button
