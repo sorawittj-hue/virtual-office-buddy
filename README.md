@@ -131,7 +131,8 @@ Connect Prism to any automation platform (n8n, Zapier, Make, custom endpoints) w
 ## Getting Started
 
 ### Requirements
-- **Node.js** 18+ or **Bun** 1.x
+- **Node.js ≥ 22.12.0** — verify with `node -v` (upgrade via [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm))
+- **Bun 1.x** (recommended, faster installs) or npm/pnpm
 - **Hermes Agent** (recommended) for full real-time features
 
 ### 1. Clone
@@ -144,9 +145,9 @@ cd virtual-office-buddy
 ### 2. Install
 
 ```bash
-npm install
+bun install        # recommended — faster, no lockfile conflicts
 # or
-bun install
+npm install
 ```
 
 ### 3. Environment variables
@@ -301,6 +302,34 @@ npm run lint       # ESLint
 npm run format     # Prettier
 npm run telegram   # Telegram WS Bridge
 ```
+
+---
+
+## Troubleshooting
+
+### `vite: not found` or `Cannot find module`
+Node version mismatch is the most common cause. Clean and reinstall:
+```bash
+node -v   # must be ≥ 22.12.0
+rm -rf node_modules package-lock.json
+bun install   # or: npm install
+```
+
+### Docker build fails / container exits immediately
+```bash
+# Check logs
+docker compose logs prism
+
+# Force clean rebuild
+docker compose down
+docker compose up -d --build --force-recreate
+```
+
+### Hermes Agent not connecting
+1. Make sure Hermes is running: `curl http://localhost:9119/health`
+2. Go to **Gateway** page → enter the correct URL → Connect
+3. If running in Docker, use your host machine's IP instead of `localhost`  
+   (e.g. `http://192.168.1.x:9119` or `http://host.docker.internal:9119`)
 
 ---
 
