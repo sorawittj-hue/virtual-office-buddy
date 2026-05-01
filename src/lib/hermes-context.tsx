@@ -29,17 +29,26 @@ export function HermesServiceProvider({ children }: { children: React.ReactNode 
   const [apiService, setApiService] = useState<HermesApiService | null>(null);
   const activeRef = useRef<WebSocketHermesService | HermesApiService | null>(null);
 
-  // Auto-reconnect on mount
+  // Auto-reconnect on mount; first-launch falls back to VITE_ env vars
   useEffect(() => {
     const savedMode = localStorage.getItem("hermes-mode");
     if (savedMode === "api") {
       const url = localStorage.getItem("hermes-api-url");
       const key = localStorage.getItem("hermes-api-key") ?? undefined;
       if (url) startApi(url, key);
-    } else {
+    } else if (savedMode === "ws") {
       const url = localStorage.getItem("hermes-ws-url");
       const token = localStorage.getItem("hermes-ws-token") ?? undefined;
       if (url) startWs(url, token);
+    } else {
+      const defaultUrl = import.meta.env.VITE_DEFAULT_API_URL as string | undefined;
+      const defaultKey = import.meta.env.VITE_DEFAULT_API_KEY as string | undefined;
+      if (defaultUrl) {
+        startApi(defaultUrl, defaultKey || undefined);
+        localStorage.setItem("hermes-mode", "api");
+        localStorage.setItem("hermes-api-url", defaultUrl);
+        if (defaultKey) localStorage.setItem("hermes-api-key", defaultKey);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
