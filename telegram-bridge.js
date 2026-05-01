@@ -60,8 +60,8 @@ if (OPENROUTER_API_KEY) {
     baseURL: "https://openrouter.ai/api/v1",
     apiKey: OPENROUTER_API_KEY,
     defaultHeaders: {
-      "HTTP-Referer": "https://github.com/virtual-office-buddy",
-      "X-Title": "Virtual Office Buddy",
+      "HTTP-Referer": "https://github.com/sorawittj-hue/virtual-office-buddy",
+      "X-Title": "Prism — Dashboard for Hermes Agent",
     },
   });
   log(`🤖 Hermes (OpenRouter) พร้อมแล้ว — model: ${HERMES_MODEL}`);

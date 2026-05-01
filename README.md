@@ -1,14 +1,18 @@
-# Virtual Office Buddy
+# Prism — Dashboard for Hermes Agent
 
-> GUI Dashboard สำหรับ [Hermes Agent](https://github.com/NousResearch/hermes-agent) — ควบคุม AI assistant ผ่านหน้าเว็บสวยงาม **เหนือกว่า Hermes Desktop** ใน 7 ด้านหลัก
+> The open-source web dashboard for [Hermes Agent](https://github.com/NousResearch/hermes-agent) — control your AI assistant beautifully from any browser. **No install required.**
 
-![Stack](https://img.shields.io/badge/React-19-61dafb?logo=react) ![Stack](https://img.shields.io/badge/TanStack_Start-1.x-ff4154) ![Stack](https://img.shields.io/badge/Tailwind_CSS-4.x-38bdf8?logo=tailwindcss) ![Stack](https://img.shields.io/badge/Three.js-r184-black?logo=threedotjs) ![Stack](https://img.shields.io/badge/Providers-17-7c3aed) ![Stack](https://img.shields.io/badge/Platforms-25-10b981)
+![Stack](https://img.shields.io/badge/React-19-61dafb?logo=react) ![Stack](https://img.shields.io/badge/TanStack_Start-1.x-ff4154) ![Stack](https://img.shields.io/badge/Tailwind_CSS-4.x-38bdf8?logo=tailwindcss) ![Stack](https://img.shields.io/badge/Three.js-r184-black?logo=threedotjs) ![Stack](https://img.shields.io/badge/Providers-17-7c3aed) ![Stack](https://img.shields.io/badge/Platforms-25-10b981) ![Stack](https://img.shields.io/badge/Guardrails-8_rules-ef4444)
 
 ---
 
-## ทำไมถึงเลือก Virtual Office Buddy?
+## Why Prism?
 
-| ฟีเจอร์ | Hermes Desktop | Virtual Office Buddy |
+One agent. Many channels. Full control.
+
+**Prism** refracts your Hermes Agent across 25 platforms and 17 LLM providers — all from a single beautiful web interface with enterprise-grade Guardrails built in.
+
+| Feature | Hermes Desktop | Prism |
 |---------|:-:|:-:|
 | Token & Cost tracking | ✅ | ✅ |
 | Slash commands (/web, /image, /code, /usage) | ✅ | ✅ |
@@ -16,25 +20,42 @@
 | Memory CRUD | ✅ | ✅ |
 | 14+ Toolsets | ✅ | ✅ **20 tools** |
 | Local LLM (Ollama, LM Studio, vLLM, llama.cpp) | ✅ | ✅ |
+| **Built-in Guardrails** | ❌ | ✅ **8 rules** |
 | **LLM Providers** | ~5 | ✅ **17 providers** |
 | **Platform integrations** | 3 | ✅ **25 platforms** |
-| **ใช้งานได้ทันที (web-based)** | ❌ ต้องติดตั้ง | ✅ **ไม่ต้อง install** |
+| **Web-based (no install)** | ❌ | ✅ |
 | **3D Office scene** | ❌ | ✅ |
 | **Schedules live CRUD** | ❌ | ✅ |
 
 ---
 
-## ฟีเจอร์ทั้งหมด
+## Features
 
-### 💬 Chat ระดับโลก
-- **SSE Streaming** — ตอบแบบ real-time พร้อม blinking cursor
-- **Token & Cost tracking** — แสดง `~X tokens · $Y` ใต้ทุก reply + session total badge ที่ header
-- **7 Slash Commands** — `/clear` `/new` `/help` `/web <query>` `/image <prompt>` `/code <task>` `/usage`
-- **Message search** — search bar กรอง message history แบบ real-time
-- **Markdown + Syntax Highlight** — code blocks, tables, blockquotes สวยงาม
-- **Model Picker inline** — สลับ model ได้ทันทีในหน้า Chat
+### 💬 Chat
+- **SSE Streaming** — real-time responses with blinking cursor
+- **Token & Cost tracking** — `~X tokens · $Y` under every reply + session total in header
+- **7 Slash Commands** — `/clear` `/new` `/help` `/web` `/image` `/code` `/usage`
+- **Message search** — real-time filter across chat history
+- **Markdown + Syntax Highlight** — code blocks, tables, blockquotes
+- **Inline Model Picker** — switch models without leaving the chat
+
+### 🛡️ Guardrails (client-side, no external API)
+
+| Rule | Type | Action |
+|------|------|--------|
+| Prompt Injection | Input | **Block** |
+| Jailbreak Detection | Input | **Block** |
+| Harmful Content Filter | Input | **Block** |
+| PII Input Detection | Input | Warn + Confirm |
+| Max Message Length | Input | Warn |
+| PII Output Detection | Output | Warn |
+| Toxic Output Filter | Output | Warn |
+| Session Cost Limit ($0.50) | Cost | Warn |
+
+Toggle each rule individually in **Settings → Guardrails**
 
 ### 🤖 Models — 17 LLM Providers
+
 | Cloud | Local |
 |-------|-------|
 | OpenRouter, OpenAI, Anthropic | **Ollama** (port 11434) |
@@ -42,85 +63,85 @@
 | Mistral, DeepSeek, Together AI | **vLLM** (port 8000) |
 | Fireworks, Cohere, HuggingFace | **llama.cpp** (port 8080) |
 
-- Quick Presets 11 โมเดล (คลิกเดียวเพิ่มได้เลย)
-- ทดสอบ connection + วัด latency ต่อ model
-- 7 category filter (free, fast, reasoning, code, vision, chat, embedding)
+- 11 quick presets (one-click add)
+- Test connection + latency badge per model
+- 7 category filters (free, fast, reasoning, code, vision, chat, embedding)
 
 ### 🔧 Skills — 20 Toolsets
-ทุก skill มี toggle เปิด/ปิดและปุ่ม "ลองใช้ →" ที่ route ไปหน้า Chat พร้อม prompt อัตโนมัติ
+Every skill has a toggle and a "Try →" button that opens Chat with a prefill prompt.
 
-| หมวด | Tools |
-|------|-------|
-| Communication | ส่งอีเมล |
-| Calendar | นัดประชุม |
-| Research | ค้นหาเว็บ, สรุปข่าว, Web Scraping, สรุปเอกสาร |
-| Analytics | สร้างรายงาน, Database Query |
-| Productivity | ตรวจสอบงาน, จัดการไฟล์, ตั้งเตือน, Automation Trigger |
-| Dev | รัน Terminal, รันโค้ด, Code Review |
-| Media | Text-to-Speech, สร้างภาพ |
-| Customer | ตอบลูกค้า, E-commerce |
-| Memory | Chat History |
+| Category | Tools |
+|----------|-------|
+| Communication | Email |
+| Calendar | Meeting scheduler |
+| Research | Web search, News digest, Web scraping, Document summarizer |
+| Analytics | Report builder, Database query |
+| Productivity | Task checker, File manager, Reminder, Automation trigger |
+| Dev | Terminal, Code execution, Code review |
+| Media | Text-to-Speech, Image generation |
+| Customer | Auto-reply, E-commerce |
+| Memory | Chat history search |
 
 ### 🧠 Memory — Full CRUD
-- เพิ่ม/แก้ไข/ลบ memory entries ได้จริง
+- Add / edit / delete memory entries
 - 5 categories: Personal, Preference, Context, Fact, Instruction
-- Memory provider selector: **Local** · **Mem0** · **Honcho** · **Local Embeddings**
-- Search + filter by category
+- Provider selector: **Local** · **Mem0** · **Honcho** · **Local Embeddings**
+- Search + filter
 
 ### 🌐 Platforms — 25 Integrations
 Telegram · Discord · Slack · WhatsApp · Signal · Matrix · Mattermost · IRC ·
 DingTalk · Feishu · WeCom · WeChat · QQ · Yuanbao ·
-Email · SMS · BlueBubbles · Home Assistant · Webhook · Voice · GitHub · Twitter · และอื่นๆ
+Email · SMS · BlueBubbles · Home Assistant · Webhook · Voice · GitHub · Twitter · and more
 
-- ดู env keys ที่ต้องตั้งค่าต่อ platform
-- Live status จาก Hermes Agent API
+- Required env keys reference per platform
+- Live status from Hermes Agent API
 
 ### 📅 Schedules — Live CRUD
-- สร้าง/แก้ไข/รัน cron jobs ได้เลย
-- Sync กับ Hermes Agent `/api/jobs` แบบ real-time
-- Fallback localStorage เมื่อไม่ได้เชื่อมต่อ
+- Create / edit / run cron jobs
+- Synced with Hermes Agent `/api/jobs` in real-time
+- localStorage fallback when offline
 
 ### 🏢 Office — 3D Isometric
 - Three.js + React Three Fiber
-- Isometric office scene แบบ interactive
+- Interactive isometric office scene
 
 ---
 
-## ติดตั้งและรัน
+## Getting Started
 
-### ความต้องการของระบบ
-- **Node.js** 18+ หรือ **Bun** 1.x
-- **Hermes Agent** (แนะนำ) สำหรับฟีเจอร์ real-time ครบชุด
+### Requirements
+- **Node.js** 18+ or **Bun** 1.x
+- **Hermes Agent** (recommended) for full real-time features
 
-### 1. Clone โปรเจกต์
+### 1. Clone
 
 ```bash
 git clone https://github.com/sorawittj-hue/virtual-office-buddy.git
 cd virtual-office-buddy
 ```
 
-### 2. ติดตั้ง dependencies
+### 2. Install
 
 ```bash
 npm install
-# หรือ
+# or
 bun install
 ```
 
-### 3. ตั้งค่า environment variables
+### 3. Environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-แก้ไข `.env`:
+Edit `.env`:
 
 ```env
-# LLM via OpenRouter (ฟรีได้ที่ openrouter.ai)
+# LLM via OpenRouter (free tier at openrouter.ai)
 OPENROUTER_API_KEY=sk-or-your-key-here
 HERMES_MODEL=nousresearch/hermes-3-llama-3.1-405b:free
 
-# Telegram Bot (ถ้าใช้ WS Bridge mode)
+# Telegram Bot (only needed for WS Bridge mode)
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 ALLOWED_CHAT_IDS=123456789
 
@@ -129,42 +150,42 @@ WS_PORT=18789
 WS_SECRET=your-random-secret-key-here
 ```
 
-> ถ้าเชื่อมผ่าน **Hermes Agent REST API** โดยตรง ไม่ต้องตั้ง `.env` — ตั้งค่าได้ในหน้า **Gateway** แทน
+> Using **Hermes Agent REST API** directly? Skip `.env` — configure the URL in the **Gateway** page instead.
 
-### 4. รัน Dashboard
+### 4. Run
 
 ```bash
 npm run dev
 ```
 
-เปิด `http://localhost:3000`
+Open `http://localhost:3000`
 
 ---
 
-## เชื่อมต่อ Hermes Agent
+## Connecting to Hermes Agent
 
-ตั้งค่าได้ที่หน้า **Gateway** — รองรับ 2 โหมด:
+Configure in the **Gateway** page — two modes supported:
 
-### โหมด A — Hermes Agent REST API (แนะนำ)
+### Mode A — Hermes Agent REST API (recommended)
 
-1. ติดตั้งและรัน [Hermes Agent](https://github.com/NousResearch/hermes-agent)
-2. ตรวจสอบว่า API ทำงานที่ `http://localhost:8642`
-3. Gateway → แท็บ "Hermes Agent API" → ใส่ URL → Connect
+1. Install and run [Hermes Agent](https://github.com/NousResearch/hermes-agent)
+2. Verify API is running at `http://localhost:8642`
+3. Gateway → "Hermes Agent API" tab → enter URL → Connect
 
-| Endpoint | ใช้ทำอะไร |
-|----------|-----------|
-| `GET /health/detailed` | ตรวจสอบสถานะ + platform status |
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health/detailed` | Status + platform info |
 | `POST /v1/chat/completions` | Chat streaming (SSE) |
-| `GET /v1/models` | ดึงรายการ models |
-| `GET/POST/PUT/DELETE /api/jobs` | จัดการ scheduled jobs |
+| `GET /v1/models` | Available models |
+| `GET/POST/PUT/DELETE /api/jobs` | Scheduled jobs |
 
-### โหมด B — Custom WebSocket Bridge
+### Mode B — Custom WebSocket Bridge
 
 ```bash
-npm run telegram   # รัน Telegram WS Bridge
+npm run telegram   # starts Telegram WS Bridge
 ```
 
-Gateway → แท็บ "Custom WS Bridge" → `ws://localhost:18789` → Connect
+Gateway → "Custom WS Bridge" tab → `ws://localhost:18789` → Connect
 
 ---
 
@@ -174,13 +195,13 @@ Gateway → แท็บ "Custom WS Bridge" → `ws://localhost:18789` → Conne
 ```bash
 ollama pull nous-hermes2
 ollama serve
-# API พร้อมที่ http://localhost:11434/v1
+# Ready at http://localhost:11434/v1
 ```
 
 ### LM Studio
-1. ดาวน์โหลด [LM Studio](https://lmstudio.ai)
-2. โหลด model ที่ต้องการ
-3. Start Local Server → API พร้อมที่ `http://localhost:1234/v1`
+1. Download [LM Studio](https://lmstudio.ai)
+2. Load a model
+3. Start Local Server → `http://localhost:1234/v1`
 
 ### vLLM
 ```bash
@@ -193,7 +214,7 @@ vllm serve meta-llama/Llama-3.3-70B-Instruct --port 8000
 ./llama-server -m model.gguf --port 8080
 ```
 
-จากนั้นไปที่หน้า **Models** → เลือก provider ที่ต้องการ → ใส่ model name → Add
+Then go to **Models** → select provider → enter model name → Add
 
 ---
 

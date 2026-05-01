@@ -52,11 +52,11 @@ function Sidebar() {
             className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-white text-sm shadow"
             style={{ background: "linear-gradient(135deg, #5b8dee, #a855f7)" }}
           >
-            H
+            P
           </div>
           <div>
-            <div className="text-white font-bold text-sm leading-tight">Hermes Agent</div>
-            <div className="text-white/40 text-[10px] leading-tight">Virtual Office</div>
+            <div className="text-white font-bold text-sm leading-tight">Prism</div>
+            <div className="text-white/40 text-[10px] leading-tight">for Hermes Agent</div>
           </div>
         </div>
       </div>
