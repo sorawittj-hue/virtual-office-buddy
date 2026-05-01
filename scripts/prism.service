@@ -1,0 +1,32 @@
+# systemd service file for Prism Dashboard (self-hosted)
+#
+# Install:
+#   sudo cp scripts/prism.service /etc/systemd/system/prism-dashboard.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now prism-dashboard
+#
+# Logs:
+#   sudo journalctl -u prism-dashboard -f
+
+[Unit]
+Description=Prism — Dashboard for Hermes Agent
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/virtual-office-buddy
+
+# Load environment from .env if it exists
+EnvironmentFile=-/home/ubuntu/virtual-office-buddy/.env
+Environment=NODE_ENV=production
+
+# Use bunx if bun is installed, fallback to npx
+ExecStart=/usr/bin/env bunx wrangler dev --port 3000 --host 0.0.0.0 --local
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

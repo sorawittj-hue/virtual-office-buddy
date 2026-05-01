@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Network,
@@ -17,9 +17,31 @@ import {
   Terminal,
   ChevronDown,
   ChevronUp,
+  ScanSearch,
 } from "lucide-react";
 import { useHermesService } from "@/lib/hermes-context";
 import { toast } from "sonner";
+
+const HERMES_PROBE_PORTS = [9119, 8642, 3000, 8080, 8000];
+
+async function probeHermes(baseUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(2_000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function detectHermesUrl(): Promise<string | null> {
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
+  const candidates = HERMES_PROBE_PORTS.map((p) => `http://${hostname}:${p}`);
+  if (hostname !== "localhost") candidates.push(...HERMES_PROBE_PORTS.map((p) => `http://localhost:${p}`));
+  for (const url of candidates) {
+    if (await probeHermes(url)) return url;
+  }
+  return null;
+}
 
 const DEFAULT_API_URL = "http://localhost:8642";
 const DEFAULT_WS_URL = "ws://localhost:18789";
@@ -86,6 +108,20 @@ export function GatewayPage() {
   const [wsToken, setWsToken] = useState(() => localStorage.getItem("hermes-ws-token") || "");
   const [showSecret, setShowSecret] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+
+  const handleDetect = async () => {
+    setDetecting(true);
+    const found = await detectHermesUrl();
+    setDetecting(false);
+    if (found) {
+      setApiUrl(found);
+      setMode("api");
+      toast.success(`พบ Hermes Agent ที่ ${found}`);
+    } else {
+      toast.error(`ไม่พบ Hermes Agent บน ports ${HERMES_PROBE_PORTS.join(", ")}`);
+    }
+  };
 
   const isConnected = wsState?.status === "connected";
   const isConnecting = wsState?.status === "connecting";
@@ -269,13 +305,26 @@ export function GatewayPage() {
               ยกเลิกการเชื่อมต่อ
             </button>
           ) : (
-            <button
-              onClick={handleConnect}
-              disabled={mode === "api" ? !apiUrl.trim() : !wsUrl.trim()}
-              className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 hover:bg-primary/90 transition-colors"
-            >
-              เชื่อมต่อ
-            </button>
+            <>
+              {mode === "api" && (
+                <button
+                  onClick={handleDetect}
+                  disabled={detecting}
+                  title={`สแกน ports ${HERMES_PROBE_PORTS.join(", ")}`}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-muted/60 text-muted-foreground text-sm font-semibold hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanSearch className="w-4 h-4" />}
+                  {detecting ? "กำลังสแกน…" : "Detect"}
+                </button>
+              )}
+              <button
+                onClick={handleConnect}
+                disabled={mode === "api" ? !apiUrl.trim() : !wsUrl.trim()}
+                className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 hover:bg-primary/90 transition-colors"
+              >
+                เชื่อมต่อ
+              </button>
+            </>
           )}
         </div>
       </motion.div>
