@@ -12,27 +12,28 @@ One agent. Many channels. Full control.
 
 **Prism** refracts your Hermes Agent across 25 platforms and 17 LLM providers — all from a single beautiful web interface with enterprise-grade Guardrails built in.
 
-| Feature | Hermes Desktop | Prism |
-|---------|:-:|:-:|
-| Token & Cost tracking | ✅ | ✅ |
-| Slash commands (/web, /image, /code, /usage) | ✅ | ✅ |
-| Chat message search | ✅ | ✅ |
-| Memory CRUD | ✅ | ✅ |
-| 14+ Toolsets | ✅ | ✅ **20 tools** |
-| Local LLM (Ollama, LM Studio, vLLM, llama.cpp) | ✅ | ✅ |
-| **Built-in Guardrails** | ❌ | ✅ **8 rules** |
-| **LLM Providers** | ~5 | ✅ **17 providers** |
-| **Platform integrations** | 3 | ✅ **25 platforms** |
-| **Web-based (no install)** | ❌ | ✅ |
-| **3D Office scene** | ❌ | ✅ |
-| **Schedules live CRUD** | ❌ | ✅ |
-| **Workflow Automation (webhooks)** | ❌ | ✅ |
+| Feature                                        | Hermes Desktop |        Prism        |
+| ---------------------------------------------- | :------------: | :-----------------: |
+| Token & Cost tracking                          |       ✅       |         ✅          |
+| Slash commands (/web, /image, /code, /usage)   |       ✅       |         ✅          |
+| Chat message search                            |       ✅       |         ✅          |
+| Memory CRUD                                    |       ✅       |         ✅          |
+| 14+ Toolsets                                   |       ✅       |   ✅ **20 tools**   |
+| Local LLM (Ollama, LM Studio, vLLM, llama.cpp) |       ✅       |         ✅          |
+| **Built-in Guardrails**                        |       ❌       |   ✅ **8 rules**    |
+| **LLM Providers**                              |       ~5       | ✅ **17 providers** |
+| **Platform integrations**                      |       3        | ✅ **25 platforms** |
+| **Web-based (no install)**                     |       ❌       |         ✅          |
+| **3D Office scene**                            |       ❌       |         ✅          |
+| **Schedules live CRUD**                        |       ❌       |         ✅          |
+| **Workflow Automation (webhooks)**             |       ❌       |         ✅          |
 
 ---
 
 ## Features
 
 ### 💬 Chat
+
 - **SSE Streaming** — real-time responses with blinking cursor
 - **Token & Cost tracking** — `~X tokens · $Y` under every reply + session total in header
 - **8 Slash Commands** — `/clear` `/new` `/help` `/web` `/image` `/code` `/usage` `/trigger`
@@ -42,26 +43,26 @@ One agent. Many channels. Full control.
 
 ### 🛡️ Guardrails (client-side, no external API)
 
-| Rule | Type | Action |
-|------|------|--------|
-| Prompt Injection | Input | **Block** |
-| Jailbreak Detection | Input | **Block** |
-| Harmful Content Filter | Input | **Block** |
-| PII Input Detection | Input | Warn + Confirm |
-| Max Message Length | Input | Warn |
-| PII Output Detection | Output | Warn |
-| Toxic Output Filter | Output | Warn |
-| Session Cost Limit ($0.50) | Cost | Warn |
+| Rule                       | Type   | Action         |
+| -------------------------- | ------ | -------------- |
+| Prompt Injection           | Input  | **Block**      |
+| Jailbreak Detection        | Input  | **Block**      |
+| Harmful Content Filter     | Input  | **Block**      |
+| PII Input Detection        | Input  | Warn + Confirm |
+| Max Message Length         | Input  | Warn           |
+| PII Output Detection       | Output | Warn           |
+| Toxic Output Filter        | Output | Warn           |
+| Session Cost Limit ($0.50) | Cost   | Warn           |
 
 Toggle each rule individually in **Settings → Guardrails**
 
 ### 🤖 Models — 17 LLM Providers
 
-| Cloud | Local |
-|-------|-------|
-| OpenRouter, OpenAI, Anthropic | **Ollama** (port 11434) |
-| Google Gemini, Groq, xAI Grok | **LM Studio** (port 1234) |
-| Mistral, DeepSeek, Together AI | **vLLM** (port 8000) |
+| Cloud                          | Local                     |
+| ------------------------------ | ------------------------- |
+| OpenRouter, OpenAI, Anthropic  | **Ollama** (port 11434)   |
+| Google Gemini, Groq, xAI Grok  | **LM Studio** (port 1234) |
+| Mistral, DeepSeek, Together AI | **vLLM** (port 8000)      |
 | Fireworks, Cohere, HuggingFace | **llama.cpp** (port 8080) |
 
 - 11 quick presets (one-click add)
@@ -69,27 +70,30 @@ Toggle each rule individually in **Settings → Guardrails**
 - 7 category filters (free, fast, reasoning, code, vision, chat, embedding)
 
 ### 🔧 Skills — 20 Toolsets
+
 Every skill has a toggle and a "Try →" button that opens Chat with a prefill prompt.
 
-| Category | Tools |
-|----------|-------|
-| Communication | Email |
-| Calendar | Meeting scheduler |
-| Research | Web search, News digest, Web scraping, Document summarizer |
-| Analytics | Report builder, Database query |
-| Productivity | Task checker, File manager, Reminder, Automation trigger |
-| Dev | Terminal, Code execution, Code review |
-| Media | Text-to-Speech, Image generation |
-| Customer | Auto-reply, E-commerce |
-| Memory | Chat history search |
+| Category      | Tools                                                      |
+| ------------- | ---------------------------------------------------------- |
+| Communication | Email                                                      |
+| Calendar      | Meeting scheduler                                          |
+| Research      | Web search, News digest, Web scraping, Document summarizer |
+| Analytics     | Report builder, Database query                             |
+| Productivity  | Task checker, File manager, Reminder, Automation trigger   |
+| Dev           | Terminal, Code execution, Code review                      |
+| Media         | Text-to-Speech, Image generation                           |
+| Customer      | Auto-reply, E-commerce                                     |
+| Memory        | Chat history search                                        |
 
 ### 🧠 Memory — Full CRUD
+
 - Add / edit / delete memory entries
 - 5 categories: Personal, Preference, Context, Fact, Instruction
 - Provider selector: **Local** · **Mem0** · **Honcho** · **Local Embeddings**
 - Search + filter
 
 ### 🌐 Platforms — 25 Integrations
+
 Telegram · Discord · Slack · WhatsApp · Signal · Matrix · Mattermost · IRC ·
 DingTalk · Feishu · WeCom · WeChat · QQ · Yuanbao ·
 Email · SMS · BlueBubbles · Home Assistant · Webhook · Voice · GitHub · Twitter · and more
@@ -101,15 +105,16 @@ Email · SMS · BlueBubbles · Home Assistant · Webhook · Voice · GitHub · T
 
 Connect Prism to any automation platform (n8n, Zapier, Make, custom endpoints) with a built-in webhook manager.
 
-| Feature | Details |
-|---------|---------|
-| HTTP Methods | GET · POST · PUT · PATCH |
+| Feature           | Details                                               |
+| ----------------- | ----------------------------------------------------- |
+| HTTP Methods      | GET · POST · PUT · PATCH                              |
 | Payload Templates | `{{prompt}}` · `{{timestamp}}` · `{{name}}` variables |
-| Slash Command | `/trigger <name> [prompt]` from Chat |
-| Response Preview | Status code · body · latency in Chat |
-| CRUD | Add · edit · delete · enable/disable per webhook |
+| Slash Command     | `/trigger <name> [prompt]` from Chat                  |
+| Response Preview  | Status code · body · latency in Chat                  |
+| CRUD              | Add · edit · delete · enable/disable per webhook      |
 
 **Quick start with n8n:**
+
 ```
 1. Create a Webhook node in n8n → copy URL
 2. Tools → Workflow Automation → Add Webhook
@@ -118,11 +123,13 @@ Connect Prism to any automation platform (n8n, Zapier, Make, custom endpoints) w
 ```
 
 ### 📅 Schedules — Live CRUD
+
 - Create / edit / run cron jobs
 - Synced with Hermes Agent `/api/jobs` in real-time
 - localStorage fallback when offline
 
 ### 🏢 Office — 3D Isometric
+
 - Three.js + React Three Fiber
 - Interactive isometric office scene
 
@@ -131,15 +138,18 @@ Connect Prism to any automation platform (n8n, Zapier, Make, custom endpoints) w
 ## Getting Started
 
 ### Requirements
+
 - **Node.js ≥ 22.12.0** — verify with `node -v` (upgrade via [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm))
 - **Bun 1.x** (recommended, faster installs) or npm/pnpm
 - **Hermes Agent** (recommended) for full real-time features
 
 > **WSL2 / Linux users:** If `node` is not found after install, nvm is not loaded in your shell. Add this to `~/.bashrc` or `~/.zshrc`:
+>
 > ```bash
 > export NVM_DIR="$HOME/.nvm"
 > [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 > ```
+>
 > Then run `source ~/.bashrc` and verify with `node -v`.
 
 ### 1. Clone
@@ -205,12 +215,12 @@ Configure in the **Gateway** page — two modes supported:
 2. Verify API is running at `http://localhost:8642`
 3. Gateway → "Hermes Agent API" tab → enter URL → Connect
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /health/detailed` | Status + platform info |
-| `POST /v1/chat/completions` | Chat streaming (SSE) |
-| `GET /v1/models` | Available models |
-| `GET/POST/PUT/DELETE /api/jobs` | Scheduled jobs |
+| Endpoint                        | Purpose                |
+| ------------------------------- | ---------------------- |
+| `GET /health/detailed`          | Status + platform info |
+| `POST /v1/chat/completions`     | Chat streaming (SSE)   |
+| `GET /v1/models`                | Available models       |
+| `GET/POST/PUT/DELETE /api/jobs` | Scheduled jobs         |
 
 ### Mode B — Custom WebSocket Bridge
 
@@ -225,6 +235,7 @@ Gateway → "Custom WS Bridge" tab → `ws://localhost:18789` → Connect
 ## Local LLM Setup
 
 ### Ollama
+
 ```bash
 ollama pull nous-hermes2
 ollama serve
@@ -232,17 +243,20 @@ ollama serve
 ```
 
 ### LM Studio
+
 1. Download [LM Studio](https://lmstudio.ai)
 2. Load a model
 3. Start Local Server → `http://localhost:1234/v1`
 
 ### vLLM
+
 ```bash
 pip install vllm
 vllm serve meta-llama/Llama-3.3-70B-Instruct --port 8000
 ```
 
 ### llama.cpp
+
 ```bash
 ./llama-server -m model.gguf --port 8080
 ```
@@ -275,6 +289,7 @@ You get a URL like `https://prism-dashboard.<your-subdomain>.workers.dev` — op
 Running inside WSL2 on Windows? WSL2 uses NAT, so `localhost:3000` in Windows browser won't reach the WSL2 process directly.
 
 **One-time port forwarding setup (run in PowerShell as Administrator):**
+
 ```powershell
 # Forward Windows localhost:3000 → WSL2:3000
 $wslIp = (wsl hostname -I).Trim().Split(" ")[0]
@@ -349,7 +364,9 @@ npm run telegram   # Telegram WS Bridge
 ## Troubleshooting
 
 ### `vite: not found` or `Cannot find module`
+
 Node version mismatch is the most common cause. Clean and reinstall:
+
 ```bash
 node -v   # must be ≥ 22.12.0
 rm -rf node_modules package-lock.json
@@ -357,7 +374,9 @@ bun install   # or: npm install
 ```
 
 ### Docker build hangs / npm install times out
+
 The Docker image now uses **Bun** which is 5–10× faster than npm. If you built before this fix, force a clean rebuild:
+
 ```bash
 docker compose down
 docker compose build --no-cache
@@ -365,7 +384,9 @@ docker compose up -d
 ```
 
 ### `ENOTEMPTY` error on Windows/WSL (D: drive)
+
 WSL2 has known file-locking issues with drives mounted at `/mnt/d/`. Fix: clone to your WSL home directory instead:
+
 ```bash
 cd ~                   # WSL home (~/ = /home/yourname), NOT /mnt/d/
 git clone https://github.com/sorawittj-hue/virtual-office-buddy.git
@@ -374,13 +395,16 @@ bun install            # or npm install
 ```
 
 ### npm install still slow on slow networks
+
 The `.npmrc` in this repo sets 5 retries and a 5-minute timeout automatically. If npm still fails, switch to Bun:
+
 ```bash
 npm install -g bun
 bun install
 ```
 
 ### Docker build fails / container exits immediately
+
 ```bash
 # Check logs
 docker compose logs prism
@@ -391,6 +415,7 @@ docker compose up -d --build --force-recreate
 ```
 
 ### Hermes Agent not connecting
+
 1. Make sure Hermes is running: `curl http://localhost:9119/health`
 2. Go to **Gateway** page → enter the correct URL → Connect
 3. If running in Docker, use your host machine's IP instead of `localhost`  

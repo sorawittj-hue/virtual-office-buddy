@@ -18,7 +18,7 @@ interface CommandPlan {
 }
 
 const commandPlans: Record<string, CommandPlan> = {
-  "ส่งอีเมล": {
+  ส่งอีเมล: {
     steps: [
       { label: "วิเคราะห์ผู้รับและจุดประสงค์", duration: 600 },
       { label: "ร่างเนื้อหาอีเมล", detail: "ใช้น้ำเสียงเป็นกันเอง", duration: 900 },
@@ -27,7 +27,7 @@ const commandPlans: Record<string, CommandPlan> = {
     ],
     result: "ส่งอีเมลเรียบร้อย! 📬 ร่าง ตรวจทาน และจัดส่งครบถ้วน",
   },
-  "ค้นหาข้อมูล": {
+  ค้นหาข้อมูล: {
     steps: [
       { label: "เชื่อมต่อแหล่งข้อมูล", duration: 500 },
       { label: "กำลังค้นหา", detail: "สแกน 3 ดัชนี", duration: 800 },
@@ -36,7 +36,7 @@ const commandPlans: Record<string, CommandPlan> = {
     ],
     result: "พบข้อมูลที่เกี่ยวข้อง 12 รายการ และสรุปให้เรียบร้อยแล้ว",
   },
-  "นัดประชุม": {
+  นัดประชุม: {
     steps: [
       { label: "ตรวจสอบปฏิทินว่าง", duration: 700 },
       { label: "หาช่วงเวลาที่ตรงกัน", detail: "ผู้เข้าร่วม 3 คน", duration: 700 },
@@ -45,7 +45,7 @@ const commandPlans: Record<string, CommandPlan> = {
     ],
     result: "นัดประชุมเรียบร้อย พรุ่งนี้เวลา 15:00 น. ✅",
   },
-  "สร้างรายงาน": {
+  สร้างรายงาน: {
     steps: [
       { label: "ดึงข้อมูลรายไตรมาสจากคลัง", duration: 700 },
       { label: "ประมวลผลตัวชี้วัด", duration: 900 },
@@ -54,7 +54,7 @@ const commandPlans: Record<string, CommandPlan> = {
     ],
     result: "สร้างรายงานรายไตรมาสและบันทึกลง Drive เรียบร้อยแล้ว",
   },
-  "ตรวจสอบงาน": {
+  ตรวจสอบงาน: {
     steps: [
       { label: "ดึง Task list จาก Notion", duration: 500 },
       { label: "จัดกลุ่มตามความเร่งด่วน", duration: 600 },
@@ -63,7 +63,7 @@ const commandPlans: Record<string, CommandPlan> = {
     ],
     result: "พบ 3 งานเร่งด่วน และ 7 งานปกติ พร้อมแจ้งเตือนเรียบร้อยแล้ว 📋",
   },
-  "ตอบลูกค้า": {
+  ตอบลูกค้า: {
     steps: [
       { label: "อ่านข้อความจากลูกค้า", duration: 400 },
       { label: "ค้นหาข้อมูลที่เกี่ยวข้อง", detail: "จาก Knowledge Base", duration: 800 },
@@ -72,7 +72,7 @@ const commandPlans: Record<string, CommandPlan> = {
     ],
     result: "ตอบลูกค้าเรียบร้อยแล้ว! ✉️ ลูกค้าได้รับคำตอบภายใน 2 นาที",
   },
-  "สรุปข่าว": {
+  สรุปข่าว: {
     steps: [
       { label: "ดึงข่าวจาก RSS feeds", duration: 600 },
       { label: "กรองข่าวที่เกี่ยวข้อง", detail: "จาก 47 บทความ", duration: 700 },
@@ -81,7 +81,7 @@ const commandPlans: Record<string, CommandPlan> = {
     ],
     result: "สรุปข่าววันนี้เรียบร้อย! 📰 คัดสรร 8 บทความสำคัญให้แล้ว",
   },
-  "จัดการไฟล์": {
+  จัดการไฟล์: {
     steps: [
       { label: "สแกนโฟลเดอร์เป้าหมาย", duration: 500 },
       { label: "จัดหมวดหมู่ไฟล์", detail: "ตามประเภทและวันที่", duration: 800 },
@@ -148,7 +148,11 @@ class MockHermesServiceImpl implements HermesService {
     };
 
     this.emit({ type: "command", command });
-    this.emit({ type: "status", status: "working", message: "รับทราบครับเจ้านาย! กำลังจัดการให้เลย…" });
+    this.emit({
+      type: "status",
+      status: "working",
+      message: "รับทราบครับเจ้านาย! กำลังจัดการให้เลย…",
+    });
     this.emit({ type: "task-start", task });
 
     let elapsed = 0;
@@ -216,17 +220,34 @@ class MockHermesServiceImpl implements HermesService {
     this.emit({ type: "task-start", task });
 
     this.schedule(() => {
-      this.emit({ type: "task-step", taskId, step: { ...steps[0], status: "running", startedAt: Date.now() } });
+      this.emit({
+        type: "task-step",
+        taskId,
+        step: { ...steps[0], status: "running", startedAt: Date.now() },
+      });
     }, 0);
     this.schedule(() => {
-      this.emit({ type: "task-step", taskId, step: { ...steps[0], status: "done", completedAt: Date.now() } });
-      this.emit({ type: "task-step", taskId, step: { ...steps[1], status: "running", startedAt: Date.now() } });
+      this.emit({
+        type: "task-step",
+        taskId,
+        step: { ...steps[0], status: "done", completedAt: Date.now() },
+      });
+      this.emit({
+        type: "task-step",
+        taskId,
+        step: { ...steps[1], status: "running", startedAt: Date.now() },
+      });
     }, 600);
     this.schedule(() => {
       this.emit({
         type: "task-step",
         taskId,
-        step: { ...steps[1], status: "error", completedAt: Date.now(), detail: "Connection timeout" },
+        step: {
+          ...steps[1],
+          status: "error",
+          completedAt: Date.now(),
+          detail: "Connection timeout",
+        },
       });
       this.emit({ type: "task-error", taskId, error: "เชื่อมต่อ API ไม่ได้ โปรดลองอีกครั้ง 🔴" });
       this.emit({ type: "status", status: "error", message: "เกิดข้อผิดพลาด! เชื่อมต่อไม่ได้ 🔴" });

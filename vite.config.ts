@@ -11,8 +11,7 @@ export default defineConfig({
     build: {
       rollupOptions: {
         output: {
-          entryFileNames: (chunk) =>
-            chunk.name === "index" ? "server.js" : "[name].js",
+          entryFileNames: (chunk) => (chunk.name === "index" ? "server.js" : "[name].js"),
         },
       },
     },

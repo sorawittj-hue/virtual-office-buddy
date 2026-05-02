@@ -10,9 +10,16 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Prism — Dashboard for Hermes Agent" },
-      { name: "description", content: "Prism — The open-source dashboard for Hermes Agent. 17 LLM providers, 25 platform integrations, built-in Guardrails." },
+      {
+        name: "description",
+        content:
+          "Prism — The open-source dashboard for Hermes Agent. 17 LLM providers, 25 platform integrations, built-in Guardrails.",
+      },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "stylesheet", href: appCss },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

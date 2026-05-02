@@ -4,7 +4,9 @@ import type { HermesService, ConnectionStatus, WsConnectionState } from "./ws-he
 export interface HermesHealthDetail {
   status: string;
   uptime?: number;
-  platforms?: string[];
+  model?: string;
+  llm_model?: string;
+  platforms?: Record<string, { connected?: boolean; status?: string }>;
   version?: string;
 }
 
@@ -134,7 +136,11 @@ export class HermesApiService implements HermesService {
       }
     } catch {
       if (!this.destroyed) {
-        this.emitState({ status: "error", url: this.baseUrl, error: "ไม่สามารถเชื่อมต่อ Hermes API" });
+        this.emitState({
+          status: "error",
+          url: this.baseUrl,
+          error: "ไม่สามารถเชื่อมต่อ Hermes API",
+        });
       }
     }
   }
@@ -240,7 +246,11 @@ export class HermesApiService implements HermesService {
 
   // ─── Kanban ─────────────────────────────────────────────────────────────────
 
-  async fetchKanbanTasks(params?: { status?: string; assignee?: string; tenant?: string }): Promise<import("./kanban").HermesKanbanTask[]> {
+  async fetchKanbanTasks(params?: {
+    status?: string;
+    assignee?: string;
+    tenant?: string;
+  }): Promise<import("./kanban").HermesKanbanTask[]> {
     const qs = new URLSearchParams();
     if (params?.status) qs.set("status", params.status);
     if (params?.assignee) qs.set("assignee", params.assignee);
@@ -254,21 +264,37 @@ export class HermesApiService implements HermesService {
   }
 
   async createKanbanTask(body: {
-    title: string; body?: string; assignee?: string; priority?: number;
-    tenant?: string; parent_id?: string; triage?: boolean;
+    title: string;
+    body?: string;
+    assignee?: string;
+    priority?: number;
+    tenant?: string;
+    parent_id?: string;
+    triage?: boolean;
   }): Promise<import("./kanban").HermesKanbanTask> {
     const res = await fetch(`${this.baseUrl}/api/kanban/tasks`, {
-      method: "POST", headers: this.headers, body: JSON.stringify(body),
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(10_000),
     });
     return res.json();
   }
 
-  async updateKanbanTask(id: string, patch: {
-    status?: string; assignee?: string; priority?: number; title?: string; body?: string;
-  }): Promise<import("./kanban").HermesKanbanTask> {
+  async updateKanbanTask(
+    id: string,
+    patch: {
+      status?: string;
+      assignee?: string;
+      priority?: number;
+      title?: string;
+      body?: string;
+    },
+  ): Promise<import("./kanban").HermesKanbanTask> {
     const res = await fetch(`${this.baseUrl}/api/kanban/tasks/${id}`, {
-      method: "PATCH", headers: this.headers, body: JSON.stringify(patch),
+      method: "PATCH",
+      headers: this.headers,
+      body: JSON.stringify(patch),
       signal: AbortSignal.timeout(10_000),
     });
     return res.json();
@@ -276,14 +302,17 @@ export class HermesApiService implements HermesService {
 
   async commentKanbanTask(id: string, comment: string): Promise<void> {
     await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/comments`, {
-      method: "POST", headers: this.headers, body: JSON.stringify({ body: comment }),
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify({ body: comment }),
       signal: AbortSignal.timeout(10_000),
     });
   }
 
   async completeKanbanTask(id: string, result: string, summary?: string): Promise<void> {
     await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/complete`, {
-      method: "POST", headers: this.headers,
+      method: "POST",
+      headers: this.headers,
       body: JSON.stringify({ result, summary }),
       signal: AbortSignal.timeout(10_000),
     });
@@ -291,21 +320,25 @@ export class HermesApiService implements HermesService {
 
   async blockKanbanTask(id: string, reason: string): Promise<void> {
     await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/block`, {
-      method: "POST", headers: this.headers, body: JSON.stringify({ reason }),
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify({ reason }),
       signal: AbortSignal.timeout(10_000),
     });
   }
 
   async unblockKanbanTask(id: string): Promise<void> {
     await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/unblock`, {
-      method: "POST", headers: this.headers,
+      method: "POST",
+      headers: this.headers,
       signal: AbortSignal.timeout(10_000),
     });
   }
 
   async archiveKanbanTask(id: string): Promise<void> {
     await fetch(`${this.baseUrl}/api/kanban/tasks/${id}/archive`, {
-      method: "POST", headers: this.headers,
+      method: "POST",
+      headers: this.headers,
       signal: AbortSignal.timeout(10_000),
     });
   }
@@ -326,6 +359,10 @@ export async function testProviderConnection(
     if (res.ok) return { ok: true, latency: Date.now() - start };
     return { ok: false, latency: Date.now() - start, error: `HTTP ${res.status}` };
   } catch (err) {
-    return { ok: false, latency: Date.now() - start, error: err instanceof Error ? err.message : "Unknown" };
+    return {
+      ok: false,
+      latency: Date.now() - start,
+      error: err instanceof Error ? err.message : "Unknown",
+    };
   }
 }

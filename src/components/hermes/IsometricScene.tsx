@@ -1,5 +1,5 @@
-import { useRef, useState, useCallback } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef, useState, useCallback, useEffect } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrthographicCamera, Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { HermesStatus } from "@/lib/hermes-types";
@@ -45,13 +45,13 @@ function Floor() {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <planeGeometry args={[18, 18]} />
-        <meshStandardMaterial color="#0d0d1e" roughness={1} />
+        <meshStandardMaterial color="#111827" roughness={1} />
       </mesh>
-      <gridHelper args={[18, 18, "#1a1a3a", "#1a1a3a"]} position={[0, 0, 0]} />
+      <gridHelper args={[18, 18, "#1f5f63", "#233044"]} position={[0, 0, 0]} />
       {/* Carpet */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[8, 6]} />
-        <meshStandardMaterial color="#1a1040" roughness={1} />
+        <meshStandardMaterial color="#123d47" roughness={1} />
       </mesh>
     </group>
   );
@@ -65,12 +65,12 @@ function Walls() {
       {/* Back wall */}
       <mesh position={[0, 3, -9]} receiveShadow>
         <planeGeometry args={[18, 6]} />
-        <meshStandardMaterial color="#10102a" roughness={1} />
+        <meshStandardMaterial color="#152033" roughness={1} />
       </mesh>
       {/* Left wall */}
       <mesh rotation={[0, Math.PI / 2, 0]} position={[-9, 3, 0]} receiveShadow>
         <planeGeometry args={[18, 6]} />
-        <meshStandardMaterial color="#0e0e26" roughness={1} />
+        <meshStandardMaterial color="#111827" roughness={1} />
       </mesh>
       {/* Wall screen back */}
       <group position={[-2, 3.5, -8.8]}>
@@ -84,8 +84,8 @@ function Walls() {
         <mesh position={[0, 0, 0.04]}>
           <planeGeometry args={[2.7, 1.5]} />
           <meshStandardMaterial
-            color="#1e3a8a"
-            emissive="#1d4ed8"
+            color="#155e75"
+            emissive="#22d3ee"
             emissiveIntensity={0.45}
             roughness={0}
           />
@@ -104,7 +104,7 @@ function Walls() {
           <planeGeometry args={[2.2, 1.3]} />
           <meshStandardMaterial
             color="#14532d"
-            emissive="#16a34a"
+            emissive="#34d399"
             emissiveIntensity={0.3}
             roughness={0}
           />
@@ -120,7 +120,7 @@ function Desk({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
       {/* Table top */}
-      <Box pos={[0, 0.78, 0]} size={[2.4, 0.09, 1.1]} color="#5c3d11" />
+      <Box pos={[0, 0.78, 0]} size={[2.4, 0.09, 1.1]} color="#8a5a1f" />
       {/* Legs */}
       {(
         [
@@ -130,7 +130,7 @@ function Desk({ position }: { position: [number, number, number] }) {
           [1.1, 0.38, 0.45],
         ] as [number, number, number][]
       ).map((p, i) => (
-        <Box key={i} pos={p} size={[0.09, 0.76, 0.09]} color="#3d2a0a" />
+        <Box key={i} pos={p} size={[0.09, 0.76, 0.09]} color="#4c3312" />
       ))}
       {/* Monitor */}
       <Box
@@ -145,8 +145,8 @@ function Desk({ position }: { position: [number, number, number] }) {
       <mesh position={[0, 1.5, -0.34]}>
         <planeGeometry args={[0.95, 0.57]} />
         <meshStandardMaterial
-          color="#3b82f6"
-          emissive="#2563eb"
+          color="#06b6d4"
+          emissive="#22d3ee"
           emissiveIntensity={0.55}
           roughness={0}
         />
@@ -367,6 +367,17 @@ function checkWebGL(): boolean {
   }
 }
 
+function CameraRig() {
+  const camera = useThree((state) => state.camera);
+
+  useEffect(() => {
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  }, [camera]);
+
+  return null;
+}
+
 /* ── CSS 2D Fallback Office ─────────────────────────────────────────────── */
 
 function FallbackOffice({ status }: { status: HermesStatus }) {
@@ -388,13 +399,13 @@ function FallbackOffice({ status }: { status: HermesStatus }) {
           : "";
 
   return (
-    <div className="relative h-[420px] sm:h-[560px] rounded-3xl overflow-hidden border border-border shadow-pop bg-gradient-to-br from-[#07071a] via-[#0d0d2e] to-[#1a1040]">
+    <div className="relative h-[420px] overflow-hidden rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_18%_16%,rgba(45,212,191,0.18),transparent_28%),linear-gradient(145deg,#0d1526,#111827_52%,#172033)] shadow-pop sm:h-[560px]">
       {/* Grid overlay */}
       <div
         className="absolute inset-0 opacity-10"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px)",
+            "linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
         }}
       />
@@ -402,39 +413,39 @@ function FallbackOffice({ status }: { status: HermesStatus }) {
       {/* Floor perspective */}
       <div
         className="absolute bottom-0 left-0 right-0 h-[55%]"
-        style={{ background: "linear-gradient(to top, rgba(26,16,64,0.5), transparent)" }}
+        style={{ background: "linear-gradient(to top, rgba(20,83,88,0.22), transparent)" }}
       />
 
       {/* Back wall screen */}
-      <div className="absolute top-[12%] left-[15%] w-[120px] h-[70px] rounded-lg border border-blue-500/30 bg-blue-900/40 shadow-[0_0_30px_rgba(37,99,235,0.2)]">
-        <div className="w-full h-full rounded-lg bg-gradient-to-br from-blue-600/20 to-blue-800/20 flex items-center justify-center">
-          <div className="text-blue-400/60 text-[10px] font-mono">DASHBOARD</div>
+      <div className="absolute left-[15%] top-[12%] h-[70px] w-[120px] rounded-xl border border-cyan-300/25 bg-cyan-950/40 shadow-[0_0_34px_rgba(45,212,191,0.2)]">
+        <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400/18 to-indigo-500/16">
+          <div className="font-mono text-[10px] font-bold text-cyan-200/70">DASHBOARD</div>
         </div>
       </div>
 
       {/* Left wall screen */}
-      <div className="absolute top-[15%] left-[5%] w-[80px] h-[55px] rounded-lg border border-green-500/30 bg-green-900/30 shadow-[0_0_20px_rgba(22,163,74,0.15)]">
-        <div className="w-full h-full rounded-lg bg-gradient-to-br from-green-600/20 to-green-800/20 flex items-center justify-center">
-          <div className="text-green-400/60 text-[8px] font-mono">STATUS</div>
+      <div className="absolute left-[5%] top-[15%] h-[55px] w-[80px] rounded-xl border border-emerald-300/25 bg-emerald-950/34 shadow-[0_0_24px_rgba(16,185,129,0.16)]">
+        <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400/18 to-teal-700/16">
+          <div className="font-mono text-[8px] font-bold text-emerald-200/70">STATUS</div>
         </div>
       </div>
 
       {/* Desk 1 */}
-      <div className="absolute bottom-[32%] left-[20%] w-[100px] h-[12px] rounded bg-amber-900/70 shadow-lg" />
-      <div className="absolute bottom-[34%] left-[28%] w-[45px] h-[30px] rounded border border-blue-500/30 bg-[#08081a] shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-        <div className="w-[85%] h-[80%] mx-auto mt-[2px] rounded-sm bg-blue-500/30" />
+      <div className="absolute bottom-[32%] left-[20%] h-[12px] w-[100px] rounded bg-amber-700/75 shadow-lg" />
+      <div className="absolute bottom-[34%] left-[28%] h-[30px] w-[45px] rounded-lg border border-cyan-300/28 bg-[#07111f] shadow-[0_0_16px_rgba(45,212,191,0.18)]">
+        <div className="mx-auto mt-[2px] h-[80%] w-[85%] rounded-sm bg-cyan-400/24" />
       </div>
       <div className="absolute bottom-[32%] left-[35%] w-[8px] h-[3px] rounded-sm bg-gray-700" />
 
       {/* Desk 2 */}
-      <div className="absolute bottom-[45%] right-[22%] w-[90px] h-[10px] rounded bg-amber-900/60 shadow-lg" />
-      <div className="absolute bottom-[47%] right-[30%] w-[40px] h-[26px] rounded border border-blue-500/20 bg-[#08081a] shadow-[0_0_12px_rgba(59,130,246,0.15)]">
-        <div className="w-[85%] h-[80%] mx-auto mt-[2px] rounded-sm bg-blue-500/25" />
+      <div className="absolute bottom-[45%] right-[22%] h-[10px] w-[90px] rounded bg-amber-700/65 shadow-lg" />
+      <div className="absolute bottom-[47%] right-[30%] h-[26px] w-[40px] rounded-lg border border-cyan-300/22 bg-[#07111f] shadow-[0_0_12px_rgba(45,212,191,0.13)]">
+        <div className="mx-auto mt-[2px] h-[80%] w-[85%] rounded-sm bg-cyan-400/22" />
       </div>
 
       {/* Sofa */}
-      <div className="absolute bottom-[22%] right-[12%] w-[80px] h-[20px] rounded-lg bg-purple-900/60 border border-purple-700/30" />
-      <div className="absolute bottom-[27%] right-[12%] w-[80px] h-[12px] rounded-t-lg bg-purple-900/50" />
+      <div className="absolute bottom-[22%] right-[12%] h-[20px] w-[80px] rounded-lg border border-orange-300/20 bg-rose-900/40" />
+      <div className="absolute bottom-[27%] right-[12%] h-[12px] w-[80px] rounded-t-lg bg-rose-900/36" />
 
       {/* Plants */}
       {[
@@ -462,11 +473,11 @@ function FallbackOffice({ status }: { status: HermesStatus }) {
         </div>
         <div className="relative">
           <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${dotColor}`} />
-          <div className="w-[18px] h-[18px] rounded-sm bg-purple-600" />
-          <div className="w-[22px] h-[22px] rounded-sm bg-purple-500 mx-auto -mt-1" />
+          <div className="h-[18px] w-[18px] rounded-sm bg-cyan-500" />
+          <div className="-mt-1 mx-auto h-[22px] w-[22px] rounded-sm bg-teal-400" />
           <div className="flex gap-[2px] mx-auto w-[18px] -mt-0.5">
-            <div className="w-2 h-4 rounded-sm bg-purple-700" />
-            <div className="w-2 h-4 rounded-sm bg-purple-700" />
+            <div className="h-4 w-2 rounded-sm bg-cyan-700" />
+            <div className="h-4 w-2 rounded-sm bg-cyan-700" />
           </div>
         </div>
       </div>
@@ -479,11 +490,11 @@ function FallbackOffice({ status }: { status: HermesStatus }) {
         </div>
         <div className="relative">
           <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gray-400" />
-          <div className="w-[18px] h-[18px] rounded-sm bg-sky-700" />
-          <div className="w-[22px] h-[22px] rounded-sm bg-sky-600 mx-auto -mt-1" />
+          <div className="h-[18px] w-[18px] rounded-sm bg-orange-600" />
+          <div className="-mt-1 mx-auto h-[22px] w-[22px] rounded-sm bg-orange-500" />
           <div className="flex gap-[2px] mx-auto w-[18px] -mt-0.5">
-            <div className="w-2 h-4 rounded-sm bg-sky-800" />
-            <div className="w-2 h-4 rounded-sm bg-sky-800" />
+            <div className="h-4 w-2 rounded-sm bg-orange-800" />
+            <div className="h-4 w-2 rounded-sm bg-orange-800" />
           </div>
         </div>
       </div>
@@ -496,11 +507,11 @@ function FallbackOffice({ status }: { status: HermesStatus }) {
         </div>
         <div className="relative">
           <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gray-400" />
-          <div className="w-[18px] h-[18px] rounded-sm bg-emerald-700" />
-          <div className="w-[22px] h-[22px] rounded-sm bg-emerald-600 mx-auto -mt-1" />
+          <div className="h-[18px] w-[18px] rounded-sm bg-emerald-700" />
+          <div className="-mt-1 mx-auto h-[22px] w-[22px] rounded-sm bg-emerald-500" />
           <div className="flex gap-[2px] mx-auto w-[18px] -mt-0.5">
-            <div className="w-2 h-4 rounded-sm bg-emerald-800" />
-            <div className="w-2 h-4 rounded-sm bg-emerald-800" />
+            <div className="h-4 w-2 rounded-sm bg-emerald-800" />
+            <div className="h-4 w-2 rounded-sm bg-emerald-800" />
           </div>
         </div>
       </div>
@@ -535,6 +546,30 @@ export function IsometricScene({ status }: { status: HermesStatus }) {
       try {
         const ctx = canvas.getContext("webgl2") || canvas.getContext("webgl");
         if (!ctx || ctx.isContextLost()) {
+          setUseFallback(true);
+          return;
+        }
+        const samplePoints = [
+          [0.5, 0.5],
+          [0.3, 0.45],
+          [0.7, 0.45],
+          [0.45, 0.7],
+          [0.6, 0.3],
+        ];
+        const pixel = new Uint8Array(4);
+        const maxVisibleValue = samplePoints.reduce((max, [x, y]) => {
+          ctx.readPixels(
+            Math.floor(canvas.width * x),
+            Math.floor(canvas.height * y),
+            1,
+            1,
+            ctx.RGBA,
+            ctx.UNSIGNED_BYTE,
+            pixel,
+          );
+          return Math.max(max, pixel[0], pixel[1], pixel[2]);
+        }, 0);
+        if (maxVisibleValue < 120) {
           setUseFallback(true);
         }
       } catch {
@@ -577,12 +612,21 @@ export function IsometricScene({ status }: { status: HermesStatus }) {
           antialias: true,
           powerPreference: "low-power",
           failIfMajorPerformanceCaveat: false,
+          preserveDrawingBuffer: true,
           alpha: false,
         }}
         onCreated={handleCreated}
-        style={{ background: "#07071a" }}
+        style={{ position: "absolute", inset: 0, zIndex: 0, background: "#07071a" }}
       >
-        <OrthographicCamera makeDefault position={[10, 10, 10]} zoom={42} near={0.1} far={200} />
+        <OrthographicCamera
+          makeDefault
+          position={[10, 10, 10]}
+          zoom={42}
+          near={0.1}
+          far={200}
+          onUpdate={(camera) => camera.lookAt(0, 0, 0)}
+        />
+        <CameraRig />
         <ambientLight intensity={0.7} color="#8080ff" />
         <directionalLight position={[6, 12, 6]} intensity={1.4} />
         <pointLight position={[-4, 4, 4]} intensity={0.4} color="#5b8dee" />

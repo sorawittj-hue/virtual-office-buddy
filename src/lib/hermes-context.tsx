@@ -50,7 +50,6 @@ export function HermesServiceProvider({ children }: { children: React.ReactNode 
         if (defaultKey) localStorage.setItem("hermes-api-key", defaultKey);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function startApi(url: string, apiKey?: string) {
@@ -107,7 +106,9 @@ export function HermesServiceProvider({ children }: { children: React.ReactNode 
   }, []);
 
   return (
-    <HermesServiceContext.Provider value={{ service, wsState, apiService, connectApi, connectWs, disconnect }}>
+    <HermesServiceContext.Provider
+      value={{ service, wsState, apiService, connectApi, connectWs, disconnect }}
+    >
       {children}
     </HermesServiceContext.Provider>
   );

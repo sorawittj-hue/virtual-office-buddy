@@ -8,8 +8,7 @@ export const Route = createFileRoute("/")({
       { title: "Prism · Office" },
       {
         name: "description",
-        content:
-          "3D isometric office scene — watch your Hermes Agent work in real time.",
+        content: "3D isometric office scene — watch your Hermes Agent work in real time.",
       },
     ],
   }),

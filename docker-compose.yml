@@ -7,7 +7,7 @@ services:
       - "3000:3000"
     env_file:
       - path: .env
-        required: false   # copy .env.example → .env to override defaults
+        required: false # copy .env.example → .env to override defaults
     environment:
       - NODE_ENV=production
 

@@ -22,5 +22,7 @@ try {
   console.log("post-build: created symlink dist/server/server.js → index.js");
 } catch {
   copyFileSync(src, dst);
-  console.log("post-build: copied dist/server/index.js → server.js (symlink failed, likely Windows)");
+  console.log(
+    "post-build: copied dist/server/index.js → server.js (symlink failed, likely Windows)",
+  );
 }

@@ -84,11 +84,7 @@ export function HermesCharacter({ status }: HermesCharacterProps) {
   return (
     <div className="relative flex flex-col items-center">
       {/* Hermes body */}
-      <motion.div
-        className="relative z-10"
-        variants={bodyVariants}
-        animate={status}
-      >
+      <motion.div className="relative z-10" variants={bodyVariants} animate={status}>
         {/* Head */}
         <div className="relative mx-auto w-24 h-24 rounded-full bg-hermes shadow-soft flex items-center justify-center text-4xl border-4 border-[oklch(0.6_0.14_200)]">
           {/* Headset band */}
@@ -153,11 +149,7 @@ export function HermesCharacter({ status }: HermesCharacterProps) {
 
         {/* Keyboard */}
         <motion.div
-          animate={
-            status === "working"
-              ? { y: [0, -2, 0] }
-              : { y: 0 }
-          }
+          animate={status === "working" ? { y: [0, -2, 0] } : { y: 0 }}
           transition={{ duration: 0.12, repeat: status === "working" ? Infinity : 0 }}
           className="absolute bottom-3 left-1/2 -translate-x-1/2 w-40 h-6 rounded-md bg-card border border-border shadow-soft flex items-center justify-center gap-1 px-2"
         >

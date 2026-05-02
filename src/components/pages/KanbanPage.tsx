@@ -1,17 +1,45 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Plus, X, RefreshCw, Cloud, HardDrive,
-  ChevronRight, User, Tag, AlertCircle, CheckCircle2,
-  Loader2, MessageSquare, Clock, Flag, Trash2, Check, Play,
-  Lock, Unlock, Archive, Send,
+  LayoutDashboard,
+  Plus,
+  X,
+  RefreshCw,
+  Cloud,
+  HardDrive,
+  ChevronRight,
+  User,
+  Tag,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  MessageSquare,
+  Clock,
+  Flag,
+  Trash2,
+  Check,
+  Play,
+  Lock,
+  Unlock,
+  Archive,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useHermesService } from "@/lib/hermes-context";
+import type { HermesApiService } from "@/lib/hermes-api-service";
 import {
-  loadTasks, saveTasks, createTask, fromApiTask,
-  COLUMN_ORDER, COLUMN_LABEL, COLUMN_COLOR, PRIORITY_LABEL, PRIORITY_COLOR,
-  type KanbanTask, type KanbanStatus, type KanbanPriority,
+  loadTasks,
+  saveTasks,
+  createTask,
+  fromApiTask,
+  COLUMN_ORDER,
+  COLUMN_LABEL,
+  COLUMN_COLOR,
+  PRIORITY_LABEL,
+  PRIORITY_COLOR,
+  type KanbanTask,
+  type KanbanStatus,
+  type KanbanPriority,
 } from "@/lib/kanban";
 
 const STORAGE_KEY = "prism-kanban-tasks";
@@ -47,28 +75,38 @@ function TaskCard({ task, onClick }: { task: KanbanTask; onClick: () => void }) 
       className="bg-card border border-border rounded-xl px-3 py-2.5 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all space-y-1.5 group"
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">{task.title}</p>
-        <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-bold ${PRIORITY_COLOR[task.priority]}`}>
+        <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">
+          {task.title}
+        </p>
+        <span
+          className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-bold ${PRIORITY_COLOR[task.priority]}`}
+        >
           {PRIORITY_LABEL[task.priority]}
         </span>
       </div>
       <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
         {task.assignee && (
           <span className="flex items-center gap-0.5">
-            <User className="w-2.5 h-2.5" />{task.assignee}
+            <User className="w-2.5 h-2.5" />
+            {task.assignee}
           </span>
         )}
         {task.comments.length > 0 && (
           <span className="flex items-center gap-0.5">
-            <MessageSquare className="w-2.5 h-2.5" />{task.comments.length}
+            <MessageSquare className="w-2.5 h-2.5" />
+            {task.comments.length}
           </span>
         )}
         {task.blockReason && (
           <span className="flex items-center gap-0.5 text-yellow-400">
-            <Lock className="w-2.5 h-2.5" />blocked
+            <Lock className="w-2.5 h-2.5" />
+            blocked
           </span>
         )}
-        <span className="ml-auto"><Clock className="w-2.5 h-2.5 inline mr-0.5" />{timeAgo(task.updatedAt)}</span>
+        <span className="ml-auto">
+          <Clock className="w-2.5 h-2.5 inline mr-0.5" />
+          {timeAgo(task.updatedAt)}
+        </span>
       </div>
     </motion.div>
   );
@@ -84,7 +122,7 @@ function TaskDetail({
   task: KanbanTask;
   onClose: () => void;
   onUpdate: (t: KanbanTask) => void;
-  apiService: any;
+  apiService: HermesApiService | null;
 }) {
   const [comment, setComment] = useState("");
   const [blockReason, setBlockReason] = useState("");
@@ -93,15 +131,25 @@ function TaskDetail({
   const [showCompleteForm, setShowCompleteForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const patch = useCallback((changes: Partial<KanbanTask>) => {
-    const updated = { ...task, ...changes, updatedAt: Date.now() };
-    onUpdate(updated);
-  }, [task, onUpdate]);
+  const patch = useCallback(
+    (changes: Partial<KanbanTask>) => {
+      const updated = { ...task, ...changes, updatedAt: Date.now() };
+      onUpdate(updated);
+    },
+    [task, onUpdate],
+  );
 
-  const apiOrLocal = async (apiFn: () => Promise<void>, localFn: () => void) => {
+  const apiOrLocal = async (apiFn: () => Promise<unknown>, localFn: () => void) => {
     if (apiService) {
       setLoading(true);
-      try { await apiFn(); } catch { toast.error("API error — updated locally"); localFn(); } finally { setLoading(false); }
+      try {
+        await apiFn();
+      } catch {
+        toast.error("API error — updated locally");
+        localFn();
+      } finally {
+        setLoading(false);
+      }
     } else {
       localFn();
     }
@@ -109,9 +157,14 @@ function TaskDetail({
 
   const addComment = async () => {
     if (!comment.trim()) return;
-    const newComment = { id: crypto.randomUUID(), author: "you", body: comment.trim(), createdAt: Date.now() };
+    const newComment = {
+      id: crypto.randomUUID(),
+      author: "you",
+      body: comment.trim(),
+      createdAt: Date.now(),
+    };
     await apiOrLocal(
-      () => apiService.commentKanbanTask(task.id, comment.trim()),
+      () => apiService!.commentKanbanTask(task.id, comment.trim()),
       () => {},
     );
     patch({ comments: [...task.comments, newComment] });
@@ -121,7 +174,7 @@ function TaskDetail({
 
   const moveStatus = async (status: KanbanStatus) => {
     await apiOrLocal(
-      () => apiService.updateKanbanTask(task.id, { status }),
+      () => apiService!.updateKanbanTask(task.id, { status }),
       () => {},
     );
     patch({ status });
@@ -131,7 +184,7 @@ function TaskDetail({
   const doBlock = async () => {
     if (!blockReason.trim()) return;
     await apiOrLocal(
-      () => apiService.blockKanbanTask(task.id, blockReason.trim()),
+      () => apiService!.blockKanbanTask(task.id, blockReason.trim()),
       () => {},
     );
     patch({ status: "blocked", blockReason: blockReason.trim() });
@@ -142,7 +195,7 @@ function TaskDetail({
 
   const doUnblock = async () => {
     await apiOrLocal(
-      () => apiService.unblockKanbanTask(task.id),
+      () => apiService!.unblockKanbanTask(task.id),
       () => {},
     );
     patch({ status: "ready", blockReason: undefined });
@@ -152,7 +205,7 @@ function TaskDetail({
   const doComplete = async () => {
     if (!result.trim()) return;
     await apiOrLocal(
-      () => apiService.completeKanbanTask(task.id, result.trim()),
+      () => apiService!.completeKanbanTask(task.id, result.trim()),
       () => {},
     );
     patch({ status: "done", result: result.trim(), completedAt: Date.now() });
@@ -163,7 +216,7 @@ function TaskDetail({
 
   const doArchive = async () => {
     await apiOrLocal(
-      () => apiService.archiveKanbanTask(task.id),
+      () => apiService!.archiveKanbanTask(task.id),
       () => {},
     );
     patch({ status: "archived" });
@@ -184,15 +237,21 @@ function TaskDetail({
       <div className="px-4 py-3 border-b border-border flex items-start gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted ${COLUMN_COLOR[task.status]}`}>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted ${COLUMN_COLOR[task.status]}`}
+            >
               {COLUMN_LABEL[task.status]}
             </span>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${PRIORITY_COLOR[task.priority]}`}>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${PRIORITY_COLOR[task.priority]}`}
+            >
               {PRIORITY_LABEL[task.priority]}
             </span>
           </div>
           <p className="font-bold text-sm text-foreground mt-1.5 leading-snug">{task.title}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{task.id} · {timeAgo(task.createdAt)}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            {task.id} · {timeAgo(task.createdAt)}
+          </p>
         </div>
         <button onClick={onClose} className="p-1 rounded hover:bg-muted transition-colors shrink-0">
           <X className="w-3.5 h-3.5 text-muted-foreground" />
@@ -204,12 +263,14 @@ function TaskDetail({
         <div className="grid grid-cols-2 gap-2 text-xs">
           {task.assignee && (
             <div className="col-span-2 flex items-center gap-1.5 text-muted-foreground">
-              <User className="w-3 h-3" /><span className="font-medium text-foreground">{task.assignee}</span>
+              <User className="w-3 h-3" />
+              <span className="font-medium text-foreground">{task.assignee}</span>
             </div>
           )}
           {task.tenant && (
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Tag className="w-3 h-3" />{task.tenant}
+              <Tag className="w-3 h-3" />
+              {task.tenant}
             </div>
           )}
         </div>
@@ -224,14 +285,16 @@ function TaskDetail({
         {/* Block reason */}
         {task.blockReason && (
           <div className="text-xs bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-yellow-400">
-            <span className="font-semibold">Blocked: </span>{task.blockReason}
+            <span className="font-semibold">Blocked: </span>
+            {task.blockReason}
           </div>
         )}
 
         {/* Result */}
         {task.result && (
           <div className="text-xs bg-status-success/10 border border-status-success/20 rounded-xl p-3 text-status-success">
-            <span className="font-semibold">Result: </span>{task.result}
+            <span className="font-semibold">Result: </span>
+            {task.result}
           </div>
         )}
 
@@ -252,7 +315,8 @@ function TaskDetail({
               onClick={() => setShowBlockForm(!showBlockForm)}
               className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 font-semibold transition-colors"
             >
-              <Lock className="w-3 h-3" />Block
+              <Lock className="w-3 h-3" />
+              Block
             </button>
           )}
           {task.status === "blocked" && (
@@ -261,7 +325,8 @@ function TaskDetail({
               disabled={loading}
               className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 font-semibold transition-colors"
             >
-              <Unlock className="w-3 h-3" />Unblock
+              <Unlock className="w-3 h-3" />
+              Unblock
             </button>
           )}
           {task.status !== "done" && task.status !== "archived" && (
@@ -269,7 +334,8 @@ function TaskDetail({
               onClick={() => setShowCompleteForm(!showCompleteForm)}
               className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-status-success/10 text-status-success hover:bg-status-success/20 font-semibold transition-colors"
             >
-              <Check className="w-3 h-3" />Complete
+              <Check className="w-3 h-3" />
+              Complete
             </button>
           )}
           {task.status === "done" && (
@@ -278,7 +344,8 @@ function TaskDetail({
               disabled={loading}
               className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground font-semibold transition-colors"
             >
-              <Archive className="w-3 h-3" />Archive
+              <Archive className="w-3 h-3" />
+              Archive
             </button>
           )}
         </div>
@@ -293,7 +360,10 @@ function TaskDetail({
               placeholder="Reason for blocking…"
               className="w-full text-xs px-3 py-2 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-yellow-500/50"
             />
-            <button onClick={doBlock} className="text-xs px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 font-semibold hover:bg-yellow-500/30 transition-colors">
+            <button
+              onClick={doBlock}
+              className="text-xs px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 font-semibold hover:bg-yellow-500/30 transition-colors"
+            >
               Confirm Block
             </button>
           </div>
@@ -310,7 +380,10 @@ function TaskDetail({
               rows={3}
               className="w-full text-xs px-3 py-2 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-status-success/50 resize-none"
             />
-            <button onClick={doComplete} className="text-xs px-3 py-1.5 rounded-lg bg-status-success/20 text-status-success font-semibold hover:bg-status-success/30 transition-colors">
+            <button
+              onClick={doComplete}
+              className="text-xs px-3 py-1.5 rounded-lg bg-status-success/20 text-status-success font-semibold hover:bg-status-success/30 transition-colors"
+            >
               Mark Complete
             </button>
           </div>
@@ -319,14 +392,21 @@ function TaskDetail({
         {/* Run history */}
         {task.runs.length > 0 && (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Run History</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              Run History
+            </p>
             <div className="space-y-1">
               {task.runs.map((r) => (
                 <div key={r.id} className="flex items-center gap-2 text-xs">
-                  {r.status === "done" ? <CheckCircle2 className="w-3 h-3 text-status-success shrink-0" />
-                    : r.status === "running" ? <Loader2 className="w-3 h-3 text-status-working animate-spin shrink-0" />
-                    : r.status === "blocked" ? <Lock className="w-3 h-3 text-yellow-400 shrink-0" />
-                    : <AlertCircle className="w-3 h-3 text-destructive shrink-0" />}
+                  {r.status === "done" ? (
+                    <CheckCircle2 className="w-3 h-3 text-status-success shrink-0" />
+                  ) : r.status === "running" ? (
+                    <Loader2 className="w-3 h-3 text-status-working animate-spin shrink-0" />
+                  ) : r.status === "blocked" ? (
+                    <Lock className="w-3 h-3 text-yellow-400 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-3 h-3 text-destructive shrink-0" />
+                  )}
                   <span className="text-muted-foreground">{timeAgo(r.startedAt)}</span>
                   {r.result && <span className="truncate text-foreground">{r.result}</span>}
                 </div>
@@ -358,7 +438,12 @@ function TaskDetail({
             <input
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); addComment(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  addComment();
+                }
+              }}
               placeholder="Add a comment…"
               className="flex-1 text-xs px-3 py-2 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/40"
             />
@@ -377,7 +462,13 @@ function TaskDetail({
 }
 
 // ─── Create Task Form ─────────────────────────────────────────────────────────
-function CreateTaskForm({ onSave, onClose }: { onSave: (t: KanbanTask) => void; onClose: () => void }) {
+function CreateTaskForm({
+  onSave,
+  onClose,
+}: {
+  onSave: (t: KanbanTask) => void;
+  onClose: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -387,7 +478,16 @@ function CreateTaskForm({ onSave, onClose }: { onSave: (t: KanbanTask) => void; 
 
   const save = () => {
     if (!title.trim()) return;
-    onSave(createTask({ title: title.trim(), body: body || undefined, assignee: assignee || undefined, priority, tenant: tenant || undefined, triage }));
+    onSave(
+      createTask({
+        title: title.trim(),
+        body: body || undefined,
+        assignee: assignee || undefined,
+        priority,
+        tenant: tenant || undefined,
+        triage,
+      }),
+    );
     onClose();
   };
 
@@ -408,7 +508,9 @@ function CreateTaskForm({ onSave, onClose }: { onSave: (t: KanbanTask) => void; 
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") save(); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save();
+        }}
         placeholder="Task title…"
         className="w-full text-sm px-3 py-2 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/40"
       />
@@ -445,14 +547,29 @@ function CreateTaskForm({ onSave, onClose }: { onSave: (t: KanbanTask) => void; 
           </button>
         ))}
         <label className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-          <input type="checkbox" checked={triage} onChange={(e) => setTriage(e.target.checked)} className="rounded" />
+          <input
+            type="checkbox"
+            checked={triage}
+            onChange={(e) => setTriage(e.target.checked)}
+            className="rounded"
+          />
           Triage first
         </label>
       </div>
       <div className="flex gap-2 justify-end">
-        <button onClick={onClose} className="text-xs px-3 py-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
-        <button onClick={save} disabled={!title.trim()} className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 disabled:opacity-40 transition-colors">
-          <Plus className="w-3 h-3" />Create
+        <button
+          onClick={onClose}
+          className="text-xs px-3 py-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={save}
+          disabled={!title.trim()}
+          className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 disabled:opacity-40 transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+          Create
         </button>
       </div>
     </motion.div>
@@ -502,7 +619,7 @@ export function KanbanPage() {
 
   const updateTask = useCallback((updated: KanbanTask) => {
     setTasks((prev) => {
-      const next = prev.map((t) => t.id === updated.id ? updated : t);
+      const next = prev.map((t) => (t.id === updated.id ? updated : t));
       saveTasks(next);
       return next;
     });
@@ -520,12 +637,18 @@ export function KanbanPage() {
 
   const deleteTask = (id: string) => {
     if (!confirm("Delete this task?")) return;
-    setTasks((prev) => { const next = prev.filter((t) => t.id !== id); saveTasks(next); return next; });
+    setTasks((prev) => {
+      const next = prev.filter((t) => t.id !== id);
+      saveTasks(next);
+      return next;
+    });
     if (selectedId === id) setSelectedId(null);
     toast.success("Task deleted");
   };
 
-  const visibleColumns = showArchived ? [...VISIBLE_COLUMNS, "archived" as KanbanStatus] : VISIBLE_COLUMNS;
+  const visibleColumns = showArchived
+    ? [...VISIBLE_COLUMNS, "archived" as KanbanStatus]
+    : VISIBLE_COLUMNS;
 
   const filteredTasks = filterAssignee.trim()
     ? tasks.filter((t) => t.assignee?.toLowerCase().includes(filterAssignee.toLowerCase()))
@@ -554,20 +677,45 @@ export function KanbanPage() {
           {/* Stats */}
           <div className="hidden sm:flex items-center gap-3 text-xs">
             <span className="text-muted-foreground">{stats.total} tasks</span>
-            {stats.running > 0 && <span className="flex items-center gap-1 text-status-working"><Loader2 className="w-3 h-3 animate-spin" />{stats.running} running</span>}
-            {stats.blocked > 0 && <span className="flex items-center gap-1 text-yellow-400"><AlertCircle className="w-3 h-3" />{stats.blocked} blocked</span>}
-            <span className="flex items-center gap-1 text-status-success"><CheckCircle2 className="w-3 h-3" />{stats.done} done</span>
+            {stats.running > 0 && (
+              <span className="flex items-center gap-1 text-status-working">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                {stats.running} running
+              </span>
+            )}
+            {stats.blocked > 0 && (
+              <span className="flex items-center gap-1 text-yellow-400">
+                <AlertCircle className="w-3 h-3" />
+                {stats.blocked} blocked
+              </span>
+            )}
+            <span className="flex items-center gap-1 text-status-success">
+              <CheckCircle2 className="w-3 h-3" />
+              {stats.done} done
+            </span>
           </div>
 
           {/* Controls */}
           <div className="flex items-center gap-2">
-            <div className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-semibold ${isApiConnected ? "bg-status-success/10 text-status-success" : "bg-muted text-muted-foreground"}`}>
-              {isApiConnected ? <Cloud className="w-2.5 h-2.5" /> : <HardDrive className="w-2.5 h-2.5" />}
+            <div
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-semibold ${isApiConnected ? "bg-status-success/10 text-status-success" : "bg-muted text-muted-foreground"}`}
+            >
+              {isApiConnected ? (
+                <Cloud className="w-2.5 h-2.5" />
+              ) : (
+                <HardDrive className="w-2.5 h-2.5" />
+              )}
               {isApiConnected ? "Hermes API" : "Local"}
             </div>
             {isApiConnected && (
-              <button onClick={fetchFromApi} disabled={loading} className="p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-50">
-                <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
+              <button
+                onClick={fetchFromApi}
+                disabled={loading}
+                className="p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`}
+                />
               </button>
             )}
             <input
@@ -580,7 +728,8 @@ export function KanbanPage() {
               onClick={() => setShowCreate(true)}
               className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />New Task
+              <Plus className="w-3.5 h-3.5" />
+              New Task
             </button>
           </div>
         </div>
@@ -589,15 +738,22 @@ export function KanbanPage() {
       {/* Board */}
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
-          <div className="flex gap-3 p-4 h-full" style={{ minWidth: `${visibleColumns.length * 220}px` }}>
+          <div
+            className="flex gap-3 p-4 h-full"
+            style={{ minWidth: `${visibleColumns.length * 220}px` }}
+          >
             {visibleColumns.map((col) => {
               const colTasks = filteredTasks.filter((t) => t.status === col);
               return (
                 <div key={col} className="flex flex-col w-52 shrink-0">
                   {/* Column header */}
                   <div className="flex items-center gap-2 mb-2 px-1">
-                    <span className={`text-xs font-bold ${COLUMN_COLOR[col]}`}>{COLUMN_LABEL[col]}</span>
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{colTasks.length}</span>
+                    <span className={`text-xs font-bold ${COLUMN_COLOR[col]}`}>
+                      {COLUMN_LABEL[col]}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                      {colTasks.length}
+                    </span>
                     {col === "blocked" && colTasks.length > 0 && (
                       <AlertCircle className="w-3 h-3 text-yellow-400 ml-auto" />
                     )}
@@ -615,9 +771,15 @@ export function KanbanPage() {
                     <AnimatePresence>
                       {colTasks.map((t) => (
                         <div key={t.id} className="relative group/card">
-                          <TaskCard task={t} onClick={() => setSelectedId(t.id === selectedId ? null : t.id)} />
+                          <TaskCard
+                            task={t}
+                            onClick={() => setSelectedId(t.id === selectedId ? null : t.id)}
+                          />
                           <button
-                            onClick={(e) => { e.stopPropagation(); deleteTask(t.id); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteTask(t.id);
+                            }}
                             className="absolute top-1.5 right-1.5 opacity-0 group-hover/card:opacity-100 p-0.5 rounded hover:bg-destructive/20 transition-all"
                           >
                             <Trash2 className="w-2.5 h-2.5 text-destructive" />
@@ -643,7 +805,9 @@ export function KanbanPage() {
                 title={showArchived ? "Hide archived" : "Show archived"}
               >
                 <Archive className="w-3.5 h-3.5" />
-                <ChevronRight className={`w-3 h-3 transition-transform ${showArchived ? "rotate-180" : ""}`} />
+                <ChevronRight
+                  className={`w-3 h-3 transition-transform ${showArchived ? "rotate-180" : ""}`}
+                />
               </button>
             </div>
           </div>
@@ -667,9 +831,18 @@ export function KanbanPage() {
       {/* Bottom hint */}
       <div className="px-4 py-2 border-t border-border bg-card/30 shrink-0 flex items-center gap-3 text-[10px] text-muted-foreground">
         <Flag className="w-3 h-3" />
-        <span>CLI: <code className="font-mono">hermes kanban list</code> · <code className="font-mono">hermes kanban create "title" --assignee researcher</code></span>
+        <span>
+          CLI: <code className="font-mono">hermes kanban list</code> ·{" "}
+          <code className="font-mono">hermes kanban create "title" --assignee researcher</code>
+        </span>
         {!isApiConnected && (
-          <span className="ml-auto">Connect via <a href="/gateway" className="text-primary hover:underline">Gateway</a> to sync with Hermes</span>
+          <span className="ml-auto">
+            Connect via{" "}
+            <a href="/gateway" className="text-primary hover:underline">
+              Gateway
+            </a>{" "}
+            to sync with Hermes
+          </span>
         )}
       </div>
     </div>

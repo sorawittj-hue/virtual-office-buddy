@@ -1,10 +1,27 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Sparkles, Mail, Search, CalendarPlus, FileBarChart, ClipboardList,
-  MessageSquareReply, Newspaper, FolderOpen, Globe, Database, Code2,
-  Terminal, Mic, Image, Zap, FileText, GitBranch, MessageCircle,
-  ShoppingCart, Clock,
+  Sparkles,
+  Mail,
+  Search,
+  CalendarPlus,
+  FileBarChart,
+  ClipboardList,
+  MessageSquareReply,
+  Newspaper,
+  FolderOpen,
+  Globe,
+  Database,
+  Code2,
+  Terminal,
+  Mic,
+  Image,
+  Zap,
+  FileText,
+  GitBranch,
+  MessageCircle,
+  ShoppingCart,
+  Clock,
 } from "lucide-react";
 import { useHermesService } from "@/lib/hermes-context";
 import { toast } from "sonner";
@@ -13,38 +30,198 @@ import { useNavigate } from "@tanstack/react-router";
 // ─── Toolset definitions ──────────────────────────────────────────────────────
 const ALL_SKILLS = [
   // Active by default
-  { id: "email",       icon: Mail,             name: "ส่งอีเมล",          desc: "ร่าง ตรวจทาน และส่งอีเมลอัตโนมัติผ่าน SMTP / Gmail", category: "Communication", defaultEnabled: true,  tryPrompt: "ส่งอีเมลทดสอบถึงตัวเอง" },
-  { id: "calendar",    icon: CalendarPlus,     name: "นัดประชุม",          desc: "ตรวจสอบปฏิทิน หาเวลาว่าง สร้าง iCal และส่งคำเชิญ",    category: "Calendar",      defaultEnabled: true,  tryPrompt: "นัดประชุมวันพรุ่งนี้เวลา 10:00" },
-  { id: "websearch",   icon: Search,           name: "ค้นหาเว็บ",          desc: "ค้นหาด้วย DuckDuckGo / SerpAPI และสรุปผลลัพธ์",          category: "Research",      defaultEnabled: true,  tryPrompt: "ค้นหาข่าวล่าสุดเกี่ยวกับ AI" },
-  { id: "report",      icon: FileBarChart,     name: "สร้างรายงาน",        desc: "ดึงข้อมูล ประมวลผล และสร้าง PDF / Markdown report",       category: "Analytics",     defaultEnabled: true,  tryPrompt: "สร้างรายงานสรุปงานประจำสัปดาห์" },
-  { id: "tasks",       icon: ClipboardList,    name: "ตรวจสอบงาน",         desc: "ดึง task list จาก Notion / Jira และแจ้งเตือน deadline",    category: "Productivity",  defaultEnabled: true,  tryPrompt: "แสดง task ที่ยังไม่เสร็จของฉัน" },
-  { id: "reply",       icon: MessageSquareReply, name: "ตอบลูกค้า",        desc: "ค้นหาคำตอบจาก knowledge base แล้วตอบกลับอัตโนมัติ",       category: "Customer",      defaultEnabled: true,  tryPrompt: "ตอบคำถามลูกค้าเกี่ยวกับสินค้า" },
-  { id: "news",        icon: Newspaper,        name: "สรุปข่าว",           desc: "คัดสรรข่าว RSS จากหลายแหล่ง สรุปเป็น digest รายวัน",       category: "Research",      defaultEnabled: true,  tryPrompt: "สรุปข่าวเทคโนโลยีวันนี้" },
-  { id: "files",       icon: FolderOpen,       name: "จัดการไฟล์",         desc: "จัดหมวดหมู่ ลบไฟล์ซ้ำ rename และสร้างรายงานการจัดการ",     category: "Productivity",  defaultEnabled: true,  tryPrompt: "จัดระเบียบโฟลเดอร์ Downloads" },
-  { id: "terminal",    icon: Terminal,         name: "รัน Terminal",        desc: "รันคำสั่ง shell, script, และ CLI tools ได้ปลอดภัย",        category: "Dev",           defaultEnabled: true,  tryPrompt: "รัน ls -la แล้วสรุปผล" },
-  { id: "codeexec",    icon: Code2,            name: "รันโค้ด",            desc: "รัน Python / JS sandbox — คำนวณ วิเคราะห์ข้อมูล ทดสอบ",    category: "Dev",           defaultEnabled: true,  tryPrompt: "คำนวณ fibonacci(20) ด้วย Python" },
-  { id: "tts",         icon: Mic,              name: "Text-to-Speech",     desc: "แปลงข้อความเป็นเสียงด้วย ElevenLabs / OpenAI TTS",         category: "Media",         defaultEnabled: false, tryPrompt: "แปลง 'สวัสดีครับ' เป็นเสียง" },
-  { id: "imagegen",    icon: Image,            name: "สร้างภาพ",           desc: "สร้างภาพด้วย DALL·E 3, Stable Diffusion, หรือ Flux",       category: "Media",         defaultEnabled: false, tryPrompt: "สร้างภาพ: แมวอวกาศในจักรวาล" },
-  { id: "scraping",    icon: Globe,            name: "Web Scraping",       desc: "ดึงข้อมูลจากเว็บไซต์ด้วย Playwright / Cheerio",            category: "Research",      defaultEnabled: false, tryPrompt: "ดึงข้อมูลราคาจากเว็บ e-commerce" },
-  { id: "database",    icon: Database,         name: "Database Query",     desc: "รัน SQL ต่อ PostgreSQL / SQLite และส่งออกผลลัพธ์",          category: "Analytics",     defaultEnabled: false, tryPrompt: "นับจำนวน users ในฐานข้อมูล" },
-  { id: "codereview",  icon: GitBranch,        name: "Code Review",        desc: "ตรวจสอบโค้ด หา bug แนะนำ refactoring และ security issue",  category: "Dev",           defaultEnabled: false, tryPrompt: "review โค้ด Python function นี้" },
-  { id: "summarize",   icon: FileText,         name: "สรุปเอกสาร",         desc: "อ่านและสรุป PDF, Word, เว็บ URL ให้เข้าใจง่าย",             category: "Research",      defaultEnabled: false, tryPrompt: "สรุปเอกสาร PDF นี้ให้ฉัน" },
-  { id: "reminder",    icon: Clock,            name: "ตั้งเตือน",           desc: "ตั้ง reminder ผ่าน Telegram / Discord ในเวลาที่กำหนด",     category: "Productivity",  defaultEnabled: false, tryPrompt: "เตือนฉัน 30 นาทีก่อนประชุม" },
-  { id: "ecommerce",   icon: ShoppingCart,     name: "E-commerce",         desc: "เชื่อมต่อ Shopify / WooCommerce จัดการ order และสต็อก",     category: "Customer",      defaultEnabled: false, tryPrompt: "แสดง order ล่าสุด 5 รายการ" },
-  { id: "chat_history",icon: MessageCircle,    name: "Chat History",       desc: "ค้นหาและสรุปประวัติการสนทนาจาก session ก่อนหน้า",          category: "Memory",        defaultEnabled: false, tryPrompt: "สรุปสิ่งที่คุยกันเมื่อสัปดาห์ที่แล้ว" },
-  { id: "automation",  icon: Zap,              name: "Automation Trigger", desc: "ทริกเกอร์ webhook และ automation workflow ไปยัง Zapier / n8n", category: "Productivity",  defaultEnabled: false, tryPrompt: "ส่ง webhook ไปยัง Zapier" },
+  {
+    id: "email",
+    icon: Mail,
+    name: "ส่งอีเมล",
+    desc: "ร่าง ตรวจทาน และส่งอีเมลอัตโนมัติผ่าน SMTP / Gmail",
+    category: "Communication",
+    defaultEnabled: true,
+    tryPrompt: "ส่งอีเมลทดสอบถึงตัวเอง",
+  },
+  {
+    id: "calendar",
+    icon: CalendarPlus,
+    name: "นัดประชุม",
+    desc: "ตรวจสอบปฏิทิน หาเวลาว่าง สร้าง iCal และส่งคำเชิญ",
+    category: "Calendar",
+    defaultEnabled: true,
+    tryPrompt: "นัดประชุมวันพรุ่งนี้เวลา 10:00",
+  },
+  {
+    id: "websearch",
+    icon: Search,
+    name: "ค้นหาเว็บ",
+    desc: "ค้นหาด้วย DuckDuckGo / SerpAPI และสรุปผลลัพธ์",
+    category: "Research",
+    defaultEnabled: true,
+    tryPrompt: "ค้นหาข่าวล่าสุดเกี่ยวกับ AI",
+  },
+  {
+    id: "report",
+    icon: FileBarChart,
+    name: "สร้างรายงาน",
+    desc: "ดึงข้อมูล ประมวลผล และสร้าง PDF / Markdown report",
+    category: "Analytics",
+    defaultEnabled: true,
+    tryPrompt: "สร้างรายงานสรุปงานประจำสัปดาห์",
+  },
+  {
+    id: "tasks",
+    icon: ClipboardList,
+    name: "ตรวจสอบงาน",
+    desc: "ดึง task list จาก Notion / Jira และแจ้งเตือน deadline",
+    category: "Productivity",
+    defaultEnabled: true,
+    tryPrompt: "แสดง task ที่ยังไม่เสร็จของฉัน",
+  },
+  {
+    id: "reply",
+    icon: MessageSquareReply,
+    name: "ตอบลูกค้า",
+    desc: "ค้นหาคำตอบจาก knowledge base แล้วตอบกลับอัตโนมัติ",
+    category: "Customer",
+    defaultEnabled: true,
+    tryPrompt: "ตอบคำถามลูกค้าเกี่ยวกับสินค้า",
+  },
+  {
+    id: "news",
+    icon: Newspaper,
+    name: "สรุปข่าว",
+    desc: "คัดสรรข่าว RSS จากหลายแหล่ง สรุปเป็น digest รายวัน",
+    category: "Research",
+    defaultEnabled: true,
+    tryPrompt: "สรุปข่าวเทคโนโลยีวันนี้",
+  },
+  {
+    id: "files",
+    icon: FolderOpen,
+    name: "จัดการไฟล์",
+    desc: "จัดหมวดหมู่ ลบไฟล์ซ้ำ rename และสร้างรายงานการจัดการ",
+    category: "Productivity",
+    defaultEnabled: true,
+    tryPrompt: "จัดระเบียบโฟลเดอร์ Downloads",
+  },
+  {
+    id: "terminal",
+    icon: Terminal,
+    name: "รัน Terminal",
+    desc: "รันคำสั่ง shell, script, และ CLI tools ได้ปลอดภัย",
+    category: "Dev",
+    defaultEnabled: true,
+    tryPrompt: "รัน ls -la แล้วสรุปผล",
+  },
+  {
+    id: "codeexec",
+    icon: Code2,
+    name: "รันโค้ด",
+    desc: "รัน Python / JS sandbox — คำนวณ วิเคราะห์ข้อมูล ทดสอบ",
+    category: "Dev",
+    defaultEnabled: true,
+    tryPrompt: "คำนวณ fibonacci(20) ด้วย Python",
+  },
+  {
+    id: "tts",
+    icon: Mic,
+    name: "Text-to-Speech",
+    desc: "แปลงข้อความเป็นเสียงด้วย ElevenLabs / OpenAI TTS",
+    category: "Media",
+    defaultEnabled: false,
+    tryPrompt: "แปลง 'สวัสดีครับ' เป็นเสียง",
+  },
+  {
+    id: "imagegen",
+    icon: Image,
+    name: "สร้างภาพ",
+    desc: "สร้างภาพด้วย DALL·E 3, Stable Diffusion, หรือ Flux",
+    category: "Media",
+    defaultEnabled: false,
+    tryPrompt: "สร้างภาพ: แมวอวกาศในจักรวาล",
+  },
+  {
+    id: "scraping",
+    icon: Globe,
+    name: "Web Scraping",
+    desc: "ดึงข้อมูลจากเว็บไซต์ด้วย Playwright / Cheerio",
+    category: "Research",
+    defaultEnabled: false,
+    tryPrompt: "ดึงข้อมูลราคาจากเว็บ e-commerce",
+  },
+  {
+    id: "database",
+    icon: Database,
+    name: "Database Query",
+    desc: "รัน SQL ต่อ PostgreSQL / SQLite และส่งออกผลลัพธ์",
+    category: "Analytics",
+    defaultEnabled: false,
+    tryPrompt: "นับจำนวน users ในฐานข้อมูล",
+  },
+  {
+    id: "codereview",
+    icon: GitBranch,
+    name: "Code Review",
+    desc: "ตรวจสอบโค้ด หา bug แนะนำ refactoring และ security issue",
+    category: "Dev",
+    defaultEnabled: false,
+    tryPrompt: "review โค้ด Python function นี้",
+  },
+  {
+    id: "summarize",
+    icon: FileText,
+    name: "สรุปเอกสาร",
+    desc: "อ่านและสรุป PDF, Word, เว็บ URL ให้เข้าใจง่าย",
+    category: "Research",
+    defaultEnabled: false,
+    tryPrompt: "สรุปเอกสาร PDF นี้ให้ฉัน",
+  },
+  {
+    id: "reminder",
+    icon: Clock,
+    name: "ตั้งเตือน",
+    desc: "ตั้ง reminder ผ่าน Telegram / Discord ในเวลาที่กำหนด",
+    category: "Productivity",
+    defaultEnabled: false,
+    tryPrompt: "เตือนฉัน 30 นาทีก่อนประชุม",
+  },
+  {
+    id: "ecommerce",
+    icon: ShoppingCart,
+    name: "E-commerce",
+    desc: "เชื่อมต่อ Shopify / WooCommerce จัดการ order และสต็อก",
+    category: "Customer",
+    defaultEnabled: false,
+    tryPrompt: "แสดง order ล่าสุด 5 รายการ",
+  },
+  {
+    id: "chat_history",
+    icon: MessageCircle,
+    name: "Chat History",
+    desc: "ค้นหาและสรุปประวัติการสนทนาจาก session ก่อนหน้า",
+    category: "Memory",
+    defaultEnabled: false,
+    tryPrompt: "สรุปสิ่งที่คุยกันเมื่อสัปดาห์ที่แล้ว",
+  },
+  {
+    id: "automation",
+    icon: Zap,
+    name: "Automation Trigger",
+    desc: "ทริกเกอร์ webhook และ automation workflow ไปยัง Zapier / n8n",
+    category: "Productivity",
+    defaultEnabled: false,
+    tryPrompt: "ส่ง webhook ไปยัง Zapier",
+  },
 ];
 
 const categoryColors: Record<string, string> = {
   Communication: "bg-blue-500/10 text-blue-400",
-  Calendar:      "bg-purple-500/10 text-purple-400",
-  Research:      "bg-green-500/10 text-green-400",
-  Analytics:     "bg-orange-500/10 text-orange-400",
-  Productivity:  "bg-cyan-500/10 text-cyan-400",
-  Customer:      "bg-pink-500/10 text-pink-400",
-  Dev:           "bg-yellow-500/10 text-yellow-400",
-  Media:         "bg-rose-500/10 text-rose-400",
-  Memory:        "bg-indigo-500/10 text-indigo-400",
+  Calendar: "bg-purple-500/10 text-purple-400",
+  Research: "bg-green-500/10 text-green-400",
+  Analytics: "bg-orange-500/10 text-orange-400",
+  Productivity: "bg-cyan-500/10 text-cyan-400",
+  Customer: "bg-pink-500/10 text-pink-400",
+  Dev: "bg-yellow-500/10 text-yellow-400",
+  Media: "bg-rose-500/10 text-rose-400",
+  Memory: "bg-indigo-500/10 text-indigo-400",
 };
 
 const ALL_CATEGORIES = ["ทั้งหมด", ...Array.from(new Set(ALL_SKILLS.map((s) => s.category)))];
@@ -55,7 +232,9 @@ function loadEnabled(): Record<string, boolean> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return Object.fromEntries(ALL_SKILLS.map((s) => [s.id, s.defaultEnabled]));
 }
 
@@ -69,7 +248,11 @@ export function SkillsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(enabled)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(enabled));
+    } catch {
+      /* ignore */
+    }
   }, [enabled]);
 
   const toggle = (id: string) => {
@@ -88,7 +271,8 @@ export function SkillsPage() {
 
   const filtered = ALL_SKILLS.filter((s) => {
     const matchCat = filterCat === "ทั้งหมด" || s.category === filterCat;
-    const matchSearch = !searchQuery.trim() ||
+    const matchSearch =
+      !searchQuery.trim() ||
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -107,13 +291,18 @@ export function SkillsPage() {
             Skills & Tools
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {enabledCount} / {ALL_SKILLS.length} skills เปิดใช้งาน — ความสามารถทั้งหมดของ Hermes Agent
+            {enabledCount} / {ALL_SKILLS.length} skills เปิดใช้งาน — ความสามารถทั้งหมดของ Hermes
+            Agent
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold ${
-            isConnected ? "bg-status-success/10 text-status-success" : "bg-muted text-muted-foreground"
-          }`}>
+          <span
+            className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold ${
+              isConnected
+                ? "bg-status-success/10 text-status-success"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
             {isConnected ? "⚡ Live" : "Mock Mode"}
           </span>
         </div>
@@ -136,7 +325,9 @@ export function SkillsPage() {
               key={cat}
               onClick={() => setFilterCat(cat)}
               className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                filterCat === cat ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+                filterCat === cat
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
               {cat}
@@ -161,8 +352,12 @@ export function SkillsPage() {
             >
               {/* Top row */}
               <div className="flex items-start justify-between gap-2">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isEnabled ? "bg-primary/10" : "bg-muted"}`}>
-                  <Icon className={`w-4.5 h-4.5 ${isEnabled ? "text-primary" : "text-muted-foreground"}`} />
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${isEnabled ? "bg-primary/10" : "bg-muted"}`}
+                >
+                  <Icon
+                    className={`w-4.5 h-4.5 ${isEnabled ? "text-primary" : "text-muted-foreground"}`}
+                  />
                 </div>
                 {/* Toggle switch */}
                 <button
@@ -172,9 +367,11 @@ export function SkillsPage() {
                   }`}
                   title={isEnabled ? "ปิดใช้งาน" : "เปิดใช้งาน"}
                 >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                    isEnabled ? "translate-x-4" : "translate-x-0"
-                  }`} />
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                      isEnabled ? "translate-x-4" : "translate-x-0"
+                    }`}
+                  />
                 </button>
               </div>
 
@@ -186,7 +383,9 @@ export function SkillsPage() {
 
               {/* Footer */}
               <div className="flex items-center justify-between gap-2">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${categoryColors[category] ?? "bg-muted text-muted-foreground"}`}>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${categoryColors[category] ?? "bg-muted text-muted-foreground"}`}
+                >
                   {category}
                 </span>
                 {isEnabled && (

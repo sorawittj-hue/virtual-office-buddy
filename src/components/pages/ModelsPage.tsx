@@ -1,10 +1,31 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu, Plus, Trash2, Star, Save, X, RefreshCw, Cloud, Zap, CheckCircle2, XCircle, Loader2, Sparkles } from "lucide-react";
+import {
+  Cpu,
+  Plus,
+  Trash2,
+  Star,
+  Save,
+  X,
+  RefreshCw,
+  Cloud,
+  Zap,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useHermesService } from "@/lib/hermes-context";
 import { testProviderConnection } from "@/lib/hermes-api-service";
-import { PROVIDERS, MODEL_PRESETS, CATEGORY_INFO, providerInfo, type ProviderId, type ModelCategory } from "@/lib/providers";
+import {
+  PROVIDERS,
+  MODEL_PRESETS,
+  CATEGORY_INFO,
+  providerInfo,
+  type ProviderId,
+  type ModelCategory,
+} from "@/lib/providers";
 
 interface ModelConfig {
   id: string;
@@ -54,6 +75,9 @@ const emptyForm: Omit<ModelConfig, "id" | "isDefault"> = {
   apiKey: "",
   category: "chat",
 };
+
+type ModelForm = typeof emptyForm;
+type ModelTextField = Extract<keyof ModelForm, "name" | "modelId" | "baseUrl" | "apiKey">;
 
 function ProviderBadge({ provider }: { provider: string }) {
   const p = providerInfo(provider);
@@ -179,10 +203,16 @@ export function ModelsPage() {
   const testModel = async (model: ModelConfig) => {
     setTestingId(model.id);
     try {
-      const result = await testProviderConnection(model.baseUrl, model.apiKey || undefined, model.modelId);
+      const result = await testProviderConnection(
+        model.baseUrl,
+        model.apiKey || undefined,
+        model.modelId,
+      );
       setModels((prev) =>
         prev.map((m) =>
-          m.id === model.id ? { ...m, lastTested: { ok: result.ok, latency: result.latency, at: Date.now() } } : m,
+          m.id === model.id
+            ? { ...m, lastTested: { ok: result.ok, latency: result.latency, at: Date.now() } }
+            : m,
         ),
       );
       if (result.ok) {
@@ -199,7 +229,8 @@ export function ModelsPage() {
     setModels((prev) => prev.map((m) => (m.id === id ? { ...m, apiKey } : m)));
   };
 
-  const filtered = filterCategory === "all" ? models : models.filter((m) => m.category === filterCategory);
+  const filtered =
+    filterCategory === "all" ? models : models.filter((m) => m.category === filterCategory);
   const defaultModel = models.find((m) => m.isDefault);
 
   return (
@@ -265,7 +296,9 @@ export function ModelsPage() {
                         <CategoryBadge category={p.category} />
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{p.desc}</p>
-                      <code className="text-[10px] font-mono text-muted-foreground/70 truncate block mt-1">{p.modelId}</code>
+                      <code className="text-[10px] font-mono text-muted-foreground/70 truncate block mt-1">
+                        {p.modelId}
+                      </code>
                     </div>
                     <Plus className="w-4 h-4 text-primary shrink-0 mt-1" />
                   </button>
@@ -288,21 +321,32 @@ export function ModelsPage() {
               <Cloud className="w-4 h-4 text-primary" />
               Models พร้อมใช้ใน Hermes ({liveModels.length})
             </div>
-            <button onClick={fetchLiveModels} disabled={loadingLive} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
+            <button
+              onClick={fetchLiveModels}
+              disabled={loadingLive}
+              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+            >
               <RefreshCw className={`w-3.5 h-3.5 ${loadingLive ? "animate-spin" : ""}`} />
             </button>
           </div>
           {liveModels.length === 0 ? (
-            <p className="text-xs text-muted-foreground">{loadingLive ? "กำลังโหลด…" : "ไม่มี models"}</p>
+            <p className="text-xs text-muted-foreground">
+              {loadingLive ? "กำลังโหลด…" : "ไม่มี models"}
+            </p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {liveModels.slice(0, 30).map((m) => (
-                <span key={m.id} className="px-2 py-0.5 rounded-md bg-background border border-border text-[11px] font-mono text-foreground/80">
+                <span
+                  key={m.id}
+                  className="px-2 py-0.5 rounded-md bg-background border border-border text-[11px] font-mono text-foreground/80"
+                >
                   {m.id}
                 </span>
               ))}
               {liveModels.length > 30 && (
-                <span className="px-2 py-0.5 text-[11px] text-muted-foreground">+{liveModels.length - 30} อื่นๆ</span>
+                <span className="px-2 py-0.5 text-[11px] text-muted-foreground">
+                  +{liveModels.length - 30} อื่นๆ
+                </span>
               )}
             </div>
           )}
@@ -323,7 +367,9 @@ export function ModelsPage() {
               <ProviderBadge provider={defaultModel.provider} />
               <CategoryBadge category={defaultModel.category} />
             </div>
-            <div className="text-xs text-muted-foreground font-mono truncate">{defaultModel.modelId}</div>
+            <div className="text-xs text-muted-foreground font-mono truncate">
+              {defaultModel.modelId}
+            </div>
           </div>
           <span className="text-xs text-primary font-semibold">Active</span>
         </motion.div>
@@ -334,7 +380,9 @@ export function ModelsPage() {
         <button
           onClick={() => setFilterCategory("all")}
           className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-            filterCategory === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground border border-border"
+            filterCategory === "all"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground border border-border"
           }`}
         >
           ทั้งหมด ({models.length})
@@ -348,7 +396,9 @@ export function ModelsPage() {
               key={cat}
               onClick={() => setFilterCategory(cat)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                filterCategory === cat ? "text-white" : "bg-muted text-muted-foreground border border-border"
+                filterCategory === cat
+                  ? "text-white"
+                  : "bg-muted text-muted-foreground border border-border"
               }`}
               style={filterCategory === cat ? { background: info.color } : {}}
             >
@@ -361,7 +411,12 @@ export function ModelsPage() {
       {/* Add form */}
       <AnimatePresence>
         {showForm && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
             <div className="rounded-2xl bg-card border border-primary/30 p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="font-bold text-foreground text-sm">เพิ่ม Model ใหม่</h2>
@@ -371,14 +426,18 @@ export function ModelsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Provider</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Provider
+                </label>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {PROVIDERS.map((p) => (
                     <button
                       key={p.id}
                       onClick={() => handleProviderChange(p.id)}
                       className={`px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                        form.provider === p.id ? "text-white border-transparent" : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                        form.provider === p.id
+                          ? "text-white border-transparent"
+                          : "bg-background text-muted-foreground border-border hover:border-primary/40"
                       }`}
                       style={form.provider === p.id ? { background: p.color } : {}}
                     >
@@ -389,7 +448,9 @@ export function ModelsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Category
+                </label>
                 <div className="flex flex-wrap gap-1.5">
                   {(Object.keys(CATEGORY_INFO) as ModelCategory[]).map((cat) => {
                     const info = CATEGORY_INFO[cat];
@@ -399,7 +460,9 @@ export function ModelsPage() {
                         key={cat}
                         onClick={() => setForm((f) => ({ ...f, category: cat }))}
                         className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
-                          active ? "text-white" : "bg-muted text-muted-foreground border border-border"
+                          active
+                            ? "text-white"
+                            : "bg-muted text-muted-foreground border border-border"
                         }`}
                         style={active ? { background: info.color } : {}}
                       >
@@ -415,13 +478,19 @@ export function ModelsPage() {
                   { key: "name", label: "ชื่อ (แสดงใน UI)", placeholder: "Hermes 3 Free" },
                   { key: "modelId", label: "Model ID", placeholder: selectedProvider.placeholder },
                   { key: "baseUrl", label: "Base URL", placeholder: selectedProvider.url },
-                  { key: "apiKey", label: "API Key", placeholder: selectedProvider.apiKeyPattern || "optional" },
+                  {
+                    key: "apiKey",
+                    label: "API Key",
+                    placeholder: selectedProvider.apiKeyPattern || "optional",
+                  },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key} className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {label}
+                    </label>
                     <input
                       type={key === "apiKey" ? "password" : "text"}
-                      value={(form as any)[key]}
+                      value={form[key as ModelTextField]}
                       onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                       placeholder={placeholder}
                       className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
@@ -478,15 +547,23 @@ export function ModelsPage() {
                       {test && !isTesting && (
                         <span
                           className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            test.ok ? "bg-status-success/15 text-status-success" : "bg-destructive/15 text-destructive"
+                            test.ok
+                              ? "bg-status-success/15 text-status-success"
+                              : "bg-destructive/15 text-destructive"
                           }`}
                         >
-                          {test.ok ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                          {test.ok ? (
+                            <CheckCircle2 className="w-3 h-3" />
+                          ) : (
+                            <XCircle className="w-3 h-3" />
+                          )}
                           {test.ok ? `${test.latency}ms` : "fail"}
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground font-mono mt-0.5 truncate">{model.modelId}</div>
+                    <div className="text-xs text-muted-foreground font-mono mt-0.5 truncate">
+                      {model.modelId}
+                    </div>
                     <div className="text-xs text-muted-foreground/60 truncate">{model.baseUrl}</div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -496,7 +573,11 @@ export function ModelsPage() {
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                       title="ทดสอบเชื่อมต่อ"
                     >
-                      {isTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                      {isTesting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Zap className="w-4 h-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => deleteModel(model.id)}
@@ -525,17 +606,27 @@ export function ModelsPage() {
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Cpu className="w-12 h-12 text-muted-foreground/30 mb-3" />
-            <p className="text-muted-foreground text-sm">ยังไม่มี model — กด "Quick Presets" หรือ "เพิ่ม Model"</p>
+            <p className="text-muted-foreground text-sm">
+              ยังไม่มี model — กด "Quick Presets" หรือ "เพิ่ม Model"
+            </p>
           </div>
         )}
       </div>
 
       <div className="rounded-2xl bg-muted/30 border border-border p-4 text-xs text-muted-foreground space-y-1.5">
         <div className="font-semibold text-foreground text-sm mb-2">วิธีใช้งาน</div>
-        <div>1. กด <strong>Quick Presets</strong> หรือ <strong>เพิ่ม Model</strong> เพื่อเลือก provider</div>
-        <div>2. กรอก <code className="px-1 rounded bg-muted font-mono">API Key</code> (ถ้าจำเป็น) แล้วกด ⚡ เพื่อทดสอบ</div>
+        <div>
+          1. กด <strong>Quick Presets</strong> หรือ <strong>เพิ่ม Model</strong> เพื่อเลือก provider
+        </div>
+        <div>
+          2. กรอก <code className="px-1 rounded bg-muted font-mono">API Key</code> (ถ้าจำเป็น)
+          แล้วกด ⚡ เพื่อทดสอบ
+        </div>
         <div>3. กด ⭐ เพื่อตั้งเป็น default — Hermes จะใช้ตัวนี้</div>
-        <div>4. ตั้งค่าใน <code className="px-1 rounded bg-muted font-mono">.env</code> ของ Hermes ตามที่เลือก</div>
+        <div>
+          4. ตั้งค่าใน <code className="px-1 rounded bg-muted font-mono">.env</code> ของ Hermes
+          ตามที่เลือก
+        </div>
       </div>
     </div>
   );

@@ -36,7 +36,8 @@ async function probeHermes(baseUrl: string): Promise<boolean> {
 async function detectHermesUrl(): Promise<string | null> {
   const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
   const candidates = HERMES_PROBE_PORTS.map((p) => `http://${hostname}:${p}`);
-  if (hostname !== "localhost") candidates.push(...HERMES_PROBE_PORTS.map((p) => `http://localhost:${p}`));
+  if (hostname !== "localhost")
+    candidates.push(...HERMES_PROBE_PORTS.map((p) => `http://localhost:${p}`));
   for (const url of candidates) {
     if (await probeHermes(url)) return url;
   }
@@ -58,7 +59,11 @@ function CopyButton({ text }: { text: string }) {
       }}
       className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
     >
-      {copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? (
+        <Check className="w-3.5 h-3.5 text-status-success" />
+      ) : (
+        <Copy className="w-3.5 h-3.5" />
+      )}
     </button>
   );
 }
@@ -99,10 +104,13 @@ function StatusBadge({ status, error }: { status?: string; error?: string }) {
 export function GatewayPage() {
   const { wsState, connectApi, connectWs, disconnect } = useHermesService();
 
-  const savedMode = typeof window !== "undefined" ? (localStorage.getItem("hermes-mode") ?? "api") : "api";
+  const savedMode =
+    typeof window !== "undefined" ? (localStorage.getItem("hermes-mode") ?? "api") : "api";
   const [mode, setMode] = useState<"api" | "ws">(savedMode as "api" | "ws");
 
-  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem("hermes-api-url") || DEFAULT_API_URL);
+  const [apiUrl, setApiUrl] = useState(
+    () => localStorage.getItem("hermes-api-url") || DEFAULT_API_URL,
+  );
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("hermes-api-key") || "");
   const [wsUrl, setWsUrl] = useState(() => localStorage.getItem("hermes-ws-url") || DEFAULT_WS_URL);
   const [wsToken, setWsToken] = useState(() => localStorage.getItem("hermes-ws-token") || "");
@@ -163,23 +171,54 @@ export function GatewayPage() {
     "# → WS server พร้อมที่ ws://localhost:18789",
   ];
 
-  const protocols = mode === "api"
-    ? [
-        { dir: "POST", path: "/v1/chat/completions", desc: "Chat + SSE streaming", color: "text-green-500" },
-        { dir: "GET", path: "/v1/models", desc: "รายการ models ที่ใช้งาน", color: "text-blue-500" },
-        { dir: "GET", path: "/health/detailed", desc: "สถานะและ uptime", color: "text-blue-500" },
-        { dir: "GET/POST", path: "/api/jobs", desc: "Cron jobs CRUD", color: "text-yellow-500" },
-        { dir: "POST", path: "/api/jobs/:id/run", desc: "รัน job ทันที", color: "text-yellow-500" },
-        { dir: "POST", path: "/v1/runs", desc: "Background tasks", color: "text-purple-500" },
-      ]
-    : [
-        { dir: "← รับ", path: "status", desc: "อัพเดทสถานะ Hermes", color: "text-blue-500" },
-        { dir: "← รับ", path: "task-start/step/complete", desc: "lifecycle ของงาน", color: "text-blue-500" },
-        { dir: "← รับ", path: "chat-stream", desc: "per-token streaming", color: "text-blue-500" },
-        { dir: "→ ส่ง", path: "chat-message", desc: "ส่งข้อความ chat", color: "text-green-500" },
-        { dir: "→ ส่ง", path: "command", desc: "สั่งให้ Hermes ทำงาน", color: "text-green-500" },
-        { dir: "↔", path: "ping/pong", desc: "keep-alive ทุก 30 วินาที", color: "text-muted-foreground" },
-      ];
+  const protocols =
+    mode === "api"
+      ? [
+          {
+            dir: "POST",
+            path: "/v1/chat/completions",
+            desc: "Chat + SSE streaming",
+            color: "text-green-500",
+          },
+          {
+            dir: "GET",
+            path: "/v1/models",
+            desc: "รายการ models ที่ใช้งาน",
+            color: "text-blue-500",
+          },
+          { dir: "GET", path: "/health/detailed", desc: "สถานะและ uptime", color: "text-blue-500" },
+          { dir: "GET/POST", path: "/api/jobs", desc: "Cron jobs CRUD", color: "text-yellow-500" },
+          {
+            dir: "POST",
+            path: "/api/jobs/:id/run",
+            desc: "รัน job ทันที",
+            color: "text-yellow-500",
+          },
+          { dir: "POST", path: "/v1/runs", desc: "Background tasks", color: "text-purple-500" },
+        ]
+      : [
+          { dir: "← รับ", path: "status", desc: "อัพเดทสถานะ Hermes", color: "text-blue-500" },
+          {
+            dir: "← รับ",
+            path: "task-start/step/complete",
+            desc: "lifecycle ของงาน",
+            color: "text-blue-500",
+          },
+          {
+            dir: "← รับ",
+            path: "chat-stream",
+            desc: "per-token streaming",
+            color: "text-blue-500",
+          },
+          { dir: "→ ส่ง", path: "chat-message", desc: "ส่งข้อความ chat", color: "text-green-500" },
+          { dir: "→ ส่ง", path: "command", desc: "สั่งให้ Hermes ทำงาน", color: "text-green-500" },
+          {
+            dir: "↔",
+            path: "ping/pong",
+            desc: "keep-alive ทุก 30 วินาที",
+            color: "text-muted-foreground",
+          },
+        ];
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
@@ -194,10 +233,14 @@ export function GatewayPage() {
       {/* Mode toggle */}
       <div className="flex rounded-xl bg-muted/50 border border-border p-1 gap-1">
         <button
-          onClick={() => { setMode("api"); }}
+          onClick={() => {
+            setMode("api");
+          }}
           disabled={isConnected || isConnecting}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${
-            mode === "api" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+            mode === "api"
+              ? "bg-primary text-primary-foreground shadow"
+              : "text-muted-foreground hover:text-foreground"
           } disabled:opacity-50`}
         >
           <Globe className="w-4 h-4" />
@@ -205,10 +248,14 @@ export function GatewayPage() {
           <span className="text-[10px] opacity-70 font-normal">แนะนำ</span>
         </button>
         <button
-          onClick={() => { setMode("ws"); }}
+          onClick={() => {
+            setMode("ws");
+          }}
           disabled={isConnected || isConnecting}
           className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${
-            mode === "ws" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+            mode === "ws"
+              ? "bg-primary text-primary-foreground shadow"
+              : "text-muted-foreground hover:text-foreground"
           } disabled:opacity-50`}
         >
           <Plug className="w-4 h-4" />
@@ -224,7 +271,11 @@ export function GatewayPage() {
         className="rounded-2xl bg-card border border-border p-5 space-y-4"
       >
         <div className="flex items-center gap-2">
-          {mode === "api" ? <Globe className="w-4 h-4 text-primary" /> : <Plug className="w-4 h-4 text-primary" />}
+          {mode === "api" ? (
+            <Globe className="w-4 h-4 text-primary" />
+          ) : (
+            <Plug className="w-4 h-4 text-primary" />
+          )}
           <h2 className="font-bold text-card-foreground text-sm">
             {mode === "api" ? "Hermes Agent REST API" : "WebSocket Bridge"}
           </h2>
@@ -235,7 +286,9 @@ export function GatewayPage() {
         {mode === "api" ? (
           <>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Base URL</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Base URL
+              </label>
               <input
                 type="text"
                 value={apiUrl}
@@ -249,7 +302,9 @@ export function GatewayPage() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 API Key
-                <span className="text-muted-foreground/60 font-normal normal-case">— ถ้าตั้ง API_SERVER_KEY ใน .env</span>
+                <span className="text-muted-foreground/60 font-normal normal-case">
+                  — ถ้าตั้ง API_SERVER_KEY ใน .env
+                </span>
               </label>
               <div className="relative">
                 <input
@@ -260,7 +315,10 @@ export function GatewayPage() {
                   disabled={isConnected || isConnecting}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 />
-                <button onClick={() => setShowSecret(!showSecret)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button
+                  onClick={() => setShowSecret(!showSecret)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
                   {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -269,7 +327,9 @@ export function GatewayPage() {
         ) : (
           <>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WebSocket URL</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                WebSocket URL
+              </label>
               <input
                 type="text"
                 value={wsUrl}
@@ -281,7 +341,9 @@ export function GatewayPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Secret Key (WS_SECRET)</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Secret Key (WS_SECRET)
+              </label>
               <div className="relative">
                 <input
                   type={showSecret ? "text" : "password"}
@@ -291,7 +353,10 @@ export function GatewayPage() {
                   disabled={isConnected || isConnecting}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 />
-                <button onClick={() => setShowSecret(!showSecret)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button
+                  onClick={() => setShowSecret(!showSecret)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
                   {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -301,7 +366,10 @@ export function GatewayPage() {
 
         <div className="flex gap-2">
           {isConnected || isConnecting ? (
-            <button onClick={handleDisconnect} className="flex-1 px-4 py-2 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-semibold hover:bg-destructive/20 transition-colors">
+            <button
+              onClick={handleDisconnect}
+              className="flex-1 px-4 py-2 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm font-semibold hover:bg-destructive/20 transition-colors"
+            >
               ยกเลิกการเชื่อมต่อ
             </button>
           ) : (
@@ -313,7 +381,11 @@ export function GatewayPage() {
                   title={`สแกน ports ${HERMES_PROBE_PORTS.join(", ")}`}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-muted/60 text-muted-foreground text-sm font-semibold hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
                 >
-                  {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanSearch className="w-4 h-4" />}
+                  {detecting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ScanSearch className="w-4 h-4" />
+                  )}
                   {detecting ? "กำลังสแกน…" : "Detect"}
                 </button>
               )}
@@ -344,19 +416,34 @@ export function GatewayPage() {
             <Terminal className="w-4 h-4 text-primary" />
             วิธีเริ่มต้น {mode === "api" ? "Hermes Agent Gateway" : "WS Bridge"}
           </div>
-          {showAdvanced ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          {showAdvanced ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          )}
         </button>
         <AnimatePresence>
           {showAdvanced && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
               <div className="rounded-xl border border-border overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b border-border">
                   <span className="text-xs font-mono text-muted-foreground">terminal</span>
-                  <CopyButton text={(mode === "api" ? apiSetupSteps : wsSetupSteps).filter(l => !l.startsWith("#")).join("\n")} />
+                  <CopyButton
+                    text={(mode === "api" ? apiSetupSteps : wsSetupSteps)
+                      .filter((l) => !l.startsWith("#"))
+                      .join("\n")}
+                  />
                 </div>
                 <pre className="p-4 text-xs font-mono text-foreground/80 bg-background leading-relaxed overflow-x-auto">
                   {(mode === "api" ? apiSetupSteps : wsSetupSteps).map((line, i) => (
-                    <div key={i} className={line.startsWith("#") ? "text-primary/60" : ""}>{line || " "}</div>
+                    <div key={i} className={line.startsWith("#") ? "text-primary/60" : ""}>
+                      {line || " "}
+                    </div>
                   ))}
                 </pre>
               </div>
@@ -378,7 +465,10 @@ export function GatewayPage() {
         </div>
         <div className="space-y-1.5">
           {protocols.map((item) => (
-            <div key={item.path} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40">
+            <div
+              key={item.path}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40"
+            >
               <span className={`text-xs font-bold shrink-0 w-20 ${item.color}`}>{item.dir}</span>
               <code className="text-xs font-mono text-foreground shrink-0">{item.path}</code>
               <span className="text-xs text-muted-foreground">{item.desc}</span>
@@ -387,7 +477,8 @@ export function GatewayPage() {
         </div>
         {mode === "api" && (
           <p className="text-xs text-muted-foreground/70">
-            ใช้ header <code className="px-1 rounded bg-muted font-mono">X-Hermes-Session-Id</code> เพื่อรักษา conversation context ข้ามคำถาม
+            ใช้ header <code className="px-1 rounded bg-muted font-mono">X-Hermes-Session-Id</code>{" "}
+            เพื่อรักษา conversation context ข้ามคำถาม
           </p>
         )}
       </motion.div>

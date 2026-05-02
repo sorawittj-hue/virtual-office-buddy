@@ -88,9 +88,7 @@ function StepRow({ step }: { step: TaskStep }) {
         >
           {step.label}
         </span>
-        {step.detail && (
-          <span className="block text-muted-foreground italic">{step.detail}</span>
-        )}
+        {step.detail && <span className="block text-muted-foreground italic">{step.detail}</span>}
         {step.startedAt && step.completedAt && (
           <span className="block text-muted-foreground/60">
             {formatDuration(step.completedAt - step.startedAt)}
@@ -107,8 +105,7 @@ function ActiveTaskCard({ task }: { task: TaskLogEntry }) {
   const isComplete = task.status === "success";
   const isError = task.status === "error";
   const progress = total === 0 ? 0 : (done / total) * 100;
-  const duration =
-    task.completedAt ? formatDuration(task.completedAt - task.startedAt) : null;
+  const duration = task.completedAt ? formatDuration(task.completedAt - task.startedAt) : null;
 
   return (
     <motion.div
@@ -281,10 +278,9 @@ export function StatusPanel({ state }: StatusPanelProps) {
               </motion.div>
             )}
             {history.map((entry) => {
-              const duration =
-                entry.completedAt
-                  ? formatDuration(entry.completedAt - entry.startedAt)
-                  : null;
+              const duration = entry.completedAt
+                ? formatDuration(entry.completedAt - entry.startedAt)
+                : null;
               const isError = entry.status === "error";
               return (
                 <motion.div

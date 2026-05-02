@@ -1,5 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle2, XCircle, Send, ChevronDown, ChevronRight, Search, Loader2 } from "lucide-react";
+import {
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Send,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Loader2,
+} from "lucide-react";
 import { useState, useMemo } from "react";
 import { useHermes } from "@/hooks/use-hermes";
 import type { TaskLogEntry } from "@/lib/hermes-types";
@@ -9,10 +18,18 @@ function formatDuration(ms: number) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 function formatTime(ts: number) {
-  return new Date(ts).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return new Date(ts).toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 function formatDate(ts: number) {
-  return new Date(ts).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(ts).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function SessionCard({ entry }: { entry: TaskLogEntry }) {
@@ -82,7 +99,9 @@ function SessionCard({ entry }: { entry: TaskLogEntry }) {
                     ) : (
                       <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40 mt-0.5 shrink-0" />
                     )}
-                    <span className={step.status === "error" ? "text-destructive" : "text-foreground"}>
+                    <span
+                      className={step.status === "error" ? "text-destructive" : "text-foreground"}
+                    >
                       {step.label}
                       {step.detail && (
                         <span className="ml-1 text-muted-foreground italic">— {step.detail}</span>
@@ -119,7 +138,10 @@ export function SessionsPage() {
   const { log, activeTask } = useHermes();
   const [search, setSearch] = useState("");
 
-  const all = activeTask ? [activeTask, ...log.filter((e) => e.id !== activeTask.id)] : log;
+  const all = useMemo(
+    () => (activeTask ? [activeTask, ...log.filter((e) => e.id !== activeTask.id)] : log),
+    [activeTask, log],
+  );
 
   const filtered = useMemo(() => {
     if (!search.trim()) return all;
@@ -128,7 +150,7 @@ export function SessionsPage() {
       (e) =>
         e.command.toLowerCase().includes(q) ||
         e.result?.toLowerCase().includes(q) ||
-        e.steps.some((s) => s.label.toLowerCase().includes(q))
+        e.steps.some((s) => s.label.toLowerCase().includes(q)),
     );
   }, [all, search]);
 
@@ -172,7 +194,9 @@ export function SessionsPage() {
       {all.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Clock className="w-12 h-12 text-muted-foreground/30 mb-3" />
-          <p className="text-muted-foreground text-sm">ยังไม่มี session — ลองส่งคำสั่งผ่านหน้า Chat หรือ Office</p>
+          <p className="text-muted-foreground text-sm">
+            ยังไม่มี session — ลองส่งคำสั่งผ่านหน้า Chat หรือ Office
+          </p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -184,7 +208,9 @@ export function SessionsPage() {
           {grouped.map(([date, entries]) => (
             <div key={date} className="space-y-2">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{date}</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {date}
+                </span>
                 <div className="flex-1 h-px bg-border" />
                 <span className="text-xs text-muted-foreground">{entries.length} รายการ</span>
               </div>

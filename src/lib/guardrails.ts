@@ -12,7 +12,7 @@ export interface GuardrailViolation {
 }
 
 export interface GuardrailResult {
-  safe: boolean;       // false = at least one "block" rule triggered
+  safe: boolean; // false = at least one "block" rule triggered
   violations: GuardrailViolation[];
 }
 
@@ -108,7 +108,7 @@ const PROMPT_INJECTION_PATTERNS = [
   /system\s*:\s*you\s+are\s+now/i,
   /\[system\]/i,
   /<\s*system\s*>/i,
-  /\|\|[^|]+\|\|/,       // ||injection||
+  /\|\|[^|]+\|\|/, // ||injection||
   /<!--.*instructions.*-->/i,
 ];
 
@@ -178,12 +178,18 @@ export function loadGuardrailConfig(): Record<string, boolean> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return Object.fromEntries(GUARDRAIL_RULES.map((r) => [r.id, r.defaultEnabled]));
 }
 
 export function saveGuardrailConfig(config: Record<string, boolean>) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  } catch {
+    /* ignore */
+  }
 }
 
 // ─── Core check functions ─────────────────────────────────────────────────────
@@ -314,7 +320,10 @@ export function checkOutput(text: string, config: Record<string, boolean>): Guar
   return { safe, violations };
 }
 
-export function checkCost(sessionCostUsd: number, config: Record<string, boolean>): GuardrailResult {
+export function checkCost(
+  sessionCostUsd: number,
+  config: Record<string, boolean>,
+): GuardrailResult {
   const violations: GuardrailViolation[] = [];
   if (config["cost_limit"] !== false && sessionCostUsd >= SESSION_COST_WARN_USD) {
     violations.push({

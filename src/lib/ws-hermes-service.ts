@@ -5,6 +5,14 @@ export interface HermesService {
   simulateTelegramWebhook(command: string): void;
   simulateError(command: string): void;
   sendChatMessage?(content: string): void;
+  fetchHealth?(): Promise<{
+    model?: string;
+    llm_model?: string;
+    uptime?: number;
+    platforms?: Record<string, { connected?: boolean; status?: string }>;
+    version?: string;
+  }>;
+  fetchPlatforms?(): Promise<Record<string, { connected: boolean; status?: string }>>;
 }
 
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
@@ -96,11 +104,11 @@ export class WebSocketHermesService implements HermesService {
   }
 
   simulateError(command: string) {
-    this.send({ type: "command", command, _forceError: true } as any);
+    this.send({ type: "command", command, _forceError: true });
   }
 
   sendChatMessage(content: string) {
-    this.send({ type: "chat-message", content } as any);
+    this.send({ type: "chat-message", content });
   }
 
   private send(payload: object) {

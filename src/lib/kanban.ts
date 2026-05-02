@@ -50,14 +50,25 @@ export function loadTasks(): KanbanTask[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export function saveTasks(tasks: KanbanTask[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  } catch {
+    /* ignore */
+  }
 }
 
-export function createTask(fields: Pick<KanbanTask, "title" | "body" | "assignee" | "priority" | "tenant" | "parentId" | "tags"> & { triage?: boolean }): KanbanTask {
+export function createTask(
+  fields: Pick<
+    KanbanTask,
+    "title" | "body" | "assignee" | "priority" | "tenant" | "parentId" | "tags"
+  > & { triage?: boolean },
+): KanbanTask {
   return {
     id: `t_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     title: fields.title,
@@ -75,7 +86,15 @@ export function createTask(fields: Pick<KanbanTask, "title" | "body" | "assignee
   };
 }
 
-export const COLUMN_ORDER: KanbanStatus[] = ["triage", "todo", "ready", "running", "blocked", "done", "archived"];
+export const COLUMN_ORDER: KanbanStatus[] = [
+  "triage",
+  "todo",
+  "ready",
+  "running",
+  "blocked",
+  "done",
+  "archived",
+];
 
 export const COLUMN_LABEL: Record<KanbanStatus, string> = {
   triage: "Triage",
@@ -97,7 +116,12 @@ export const COLUMN_COLOR: Record<KanbanStatus, string> = {
   archived: "text-muted-foreground/50",
 };
 
-export const PRIORITY_LABEL: Record<KanbanPriority, string> = { 1: "Urgent", 2: "High", 3: "Medium", 4: "Low" };
+export const PRIORITY_LABEL: Record<KanbanPriority, string> = {
+  1: "Urgent",
+  2: "High",
+  3: "Medium",
+  4: "Low",
+};
 export const PRIORITY_COLOR: Record<KanbanPriority, string> = {
   1: "bg-destructive/20 text-destructive",
   2: "bg-orange-500/20 text-orange-400",
@@ -122,7 +146,13 @@ export interface HermesKanbanTask {
   updated_at: string;
   completed_at?: string;
   comments?: Array<{ id: string; author: string; body: string; created_at: string }>;
-  runs?: Array<{ id: string; started_at: string; completed_at?: string; result?: string; status: string }>;
+  runs?: Array<{
+    id: string;
+    started_at: string;
+    completed_at?: string;
+    result?: string;
+    status: string;
+  }>;
 }
 
 export function fromApiTask(t: HermesKanbanTask): KanbanTask {
@@ -140,7 +170,10 @@ export function fromApiTask(t: HermesKanbanTask): KanbanTask {
     blockReason: t.block_reason,
     tags: [],
     comments: (t.comments ?? []).map((c) => ({
-      id: c.id, author: c.author, body: c.body, createdAt: new Date(c.created_at).getTime(),
+      id: c.id,
+      author: c.author,
+      body: c.body,
+      createdAt: new Date(c.created_at).getTime(),
     })),
     runs: (t.runs ?? []).map((r) => ({
       id: r.id,

@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, RefreshCw, Cloud, Copy, Check, ExternalLink, ChevronDown, Terminal } from "lucide-react";
+import {
+  Layers,
+  RefreshCw,
+  Cloud,
+  Copy,
+  Check,
+  ExternalLink,
+  ChevronDown,
+  Terminal,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useHermesService } from "@/lib/hermes-context";
 import { PLATFORMS, CATEGORY_LABELS, type PlatformInfo } from "@/lib/platforms";
@@ -22,12 +31,16 @@ function TelegramBridgeSection({ connected }: { connected: boolean }) {
   };
   return (
     <div className="space-y-2">
-      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
-        connected
-          ? "bg-status-success/10 border border-status-success/30 text-status-success"
-          : "bg-muted/60 border border-border text-muted-foreground"
-      }`}>
-        <span className={`w-2 h-2 rounded-full shrink-0 ${connected ? "bg-status-success" : "bg-muted-foreground/50"}`} />
+      <div
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
+          connected
+            ? "bg-status-success/10 border border-status-success/30 text-status-success"
+            : "bg-muted/60 border border-border text-muted-foreground"
+        }`}
+      >
+        <span
+          className={`w-2 h-2 rounded-full shrink-0 ${connected ? "bg-status-success" : "bg-muted-foreground/50"}`}
+        />
         {connected ? "Telegram Bridge — Connected" : "Telegram Bridge — Not running"}
       </div>
       {!connected && (
@@ -37,13 +50,22 @@ function TelegramBridgeSection({ connected }: { connected: boolean }) {
               <Terminal className="w-3.5 h-3.5" />
               วิธีเริ่ม Bridge
             </div>
-            <button onClick={copy} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors">
-              {copied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
+            <button
+              onClick={copy}
+              className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-status-success" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
             </button>
           </div>
           <pre className="p-3 text-xs font-mono text-foreground/80 bg-background leading-relaxed overflow-x-auto">
             {TELEGRAM_BRIDGE_CMD.split("\n").map((line, i) => (
-              <div key={i} className={line.startsWith("#") ? "text-primary/60" : ""}>{line || " "}</div>
+              <div key={i} className={line.startsWith("#") ? "text-primary/60" : ""}>
+                {line || " "}
+              </div>
             ))}
           </pre>
         </div>
@@ -78,7 +100,10 @@ function PlatformCard({
         connected ? "border-status-success/40" : "border-border"
       }`}
     >
-      <button onClick={onToggle} className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left"
+      >
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl shrink-0"
           style={{ background: platform.color + "15", border: `1px solid ${platform.color}30` }}
@@ -188,7 +213,11 @@ export function PlatformsPage() {
 
   const filtered = PLATFORMS.filter((p) => {
     if (filterCategory !== "all" && p.category !== filterCategory) return false;
-    if (search && !p.label.toLowerCase().includes(search.toLowerCase()) && !p.description.toLowerCase().includes(search.toLowerCase())) {
+    if (
+      search &&
+      !p.label.toLowerCase().includes(search.toLowerCase()) &&
+      !p.description.toLowerCase().includes(search.toLowerCase())
+    ) {
       return false;
     }
     return true;
@@ -211,7 +240,9 @@ export function PlatformsPage() {
             {isApiConnected ? (
               <>
                 <Cloud className="w-3.5 h-3.5 text-status-success" />
-                <span className="text-status-success font-medium">{connectedCount} platforms ออนไลน์</span>
+                <span className="text-status-success font-medium">
+                  {connectedCount} platforms ออนไลน์
+                </span>
               </>
             ) : (
               <span>{PLATFORMS.length} platforms ที่ Hermes รองรับ</span>
@@ -280,8 +311,12 @@ export function PlatformsPage() {
         <p className="font-semibold text-foreground text-sm mb-1.5">วิธีเปิด platform</p>
         <ol className="space-y-1 list-decimal list-inside">
           <li>คลิกที่ platform → คัดลอก env key</li>
-          <li>ใส่ค่าใน <code className="px-1 rounded bg-muted font-mono">.env</code> ของ Hermes</li>
-          <li>รัน <code className="px-1 rounded bg-muted font-mono">hermes gateway</code> ใหม่</li>
+          <li>
+            ใส่ค่าใน <code className="px-1 rounded bg-muted font-mono">.env</code> ของ Hermes
+          </li>
+          <li>
+            รัน <code className="px-1 rounded bg-muted font-mono">hermes gateway</code> ใหม่
+          </li>
           <li>กลับมาที่หน้านี้ กดรีเฟรช → เห็น "ออนไลน์"</li>
         </ol>
       </div>

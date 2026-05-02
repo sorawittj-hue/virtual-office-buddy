@@ -1,11 +1,20 @@
 import { useState, useEffect, useRef } from "react";
-import { Settings, Moon, Sun, Bell, Globe, Trash2, Check, ShieldCheck, ShieldAlert, Shield, Download, Upload } from "lucide-react";
-import { motion } from "framer-motion";
 import {
-  GUARDRAIL_RULES,
-  loadGuardrailConfig,
-  saveGuardrailConfig,
-} from "@/lib/guardrails";
+  Settings,
+  Moon,
+  Sun,
+  Bell,
+  Globe,
+  Trash2,
+  Check,
+  ShieldCheck,
+  ShieldAlert,
+  Shield,
+  Download,
+  Upload,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { GUARDRAIL_RULES, loadGuardrailConfig, saveGuardrailConfig } from "@/lib/guardrails";
 import { toast } from "sonner";
 
 // ─── Keys that are part of the exportable backup ─────────────────────────────
@@ -25,7 +34,11 @@ function exportSettings() {
   BACKUP_KEYS.forEach((key) => {
     const val = localStorage.getItem(key);
     if (val !== null) {
-      try { data[key] = JSON.parse(val); } catch { data[key] = val; }
+      try {
+        data[key] = JSON.parse(val);
+      } catch {
+        data[key] = val;
+      }
     }
   });
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -76,7 +89,11 @@ function GuardrailsSection() {
   const totalCount = GUARDRAIL_RULES.length;
 
   const categories = ["input", "output", "cost"] as const;
-  const catLabel: Record<string, string> = { input: "Input Guards", output: "Output Guards", cost: "Cost Controls" };
+  const catLabel: Record<string, string> = {
+    input: "Input Guards",
+    output: "Output Guards",
+    cost: "Cost Controls",
+  };
 
   return (
     <motion.div
@@ -89,15 +106,19 @@ function GuardrailsSection() {
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-status-success" />
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Guardrails</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Guardrails
+          </span>
         </div>
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-          enabledCount === totalCount
-            ? "bg-status-success/10 text-status-success"
-            : enabledCount === 0
-            ? "bg-destructive/10 text-destructive"
-            : "bg-yellow-500/10 text-yellow-500"
-        }`}>
+        <span
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+            enabledCount === totalCount
+              ? "bg-status-success/10 text-status-success"
+              : enabledCount === 0
+                ? "bg-destructive/10 text-destructive"
+                : "bg-yellow-500/10 text-yellow-500"
+          }`}
+        >
           {enabledCount} / {totalCount} active
         </span>
       </div>
@@ -105,9 +126,9 @@ function GuardrailsSection() {
       {/* Description */}
       <div className="px-4 py-3 bg-muted/20 border-b border-border">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Guardrails ตรวจสอบข้อความ <strong>ก่อนส่ง</strong> และ <strong>หลังรับ</strong> จาก AI
-          — ป้องกัน prompt injection, PII leakage, harmful content และ cost overrun
-          ทุกอย่างทำงานใน browser ไม่ส่งข้อมูลไปนอก
+          Guardrails ตรวจสอบข้อความ <strong>ก่อนส่ง</strong> และ <strong>หลังรับ</strong> จาก AI —
+          ป้องกัน prompt injection, PII leakage, harmful content และ cost overrun ทุกอย่างทำงานใน
+          browser ไม่ส่งข้อมูลไปนอก
         </p>
       </div>
 
@@ -129,19 +150,25 @@ function GuardrailsSection() {
                   <div key={rule.id} className="flex items-center gap-3 px-4 py-3.5">
                     <div className="shrink-0">
                       {rule.severity === "block" ? (
-                        <ShieldAlert className={`w-4 h-4 ${isEnabled ? "text-destructive" : "text-muted-foreground/40"}`} />
+                        <ShieldAlert
+                          className={`w-4 h-4 ${isEnabled ? "text-destructive" : "text-muted-foreground/40"}`}
+                        />
                       ) : (
-                        <Shield className={`w-4 h-4 ${isEnabled ? "text-yellow-500" : "text-muted-foreground/40"}`} />
+                        <Shield
+                          className={`w-4 h-4 ${isEnabled ? "text-yellow-500" : "text-muted-foreground/40"}`}
+                        />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-foreground">{rule.name}</span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${
-                          rule.severity === "block"
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-yellow-500/10 text-yellow-500"
-                        }`}>
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${
+                            rule.severity === "block"
+                              ? "bg-destructive/10 text-destructive"
+                              : "bg-yellow-500/10 text-yellow-500"
+                          }`}
+                        >
                           {rule.severity}
                         </span>
                       </div>
@@ -154,9 +181,11 @@ function GuardrailsSection() {
                         isEnabled ? "bg-primary" : "bg-muted-foreground/30"
                       }`}
                     >
-                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                        isEnabled ? "translate-x-4" : "translate-x-0"
-                      }`} />
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                          isEnabled ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
                     </button>
                   </div>
                 );
@@ -178,8 +207,13 @@ export function SettingsPage() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (dark) { root.classList.add("dark"); localStorage.setItem("theme", "dark"); }
-    else { root.classList.remove("dark"); localStorage.setItem("theme", "light"); }
+    if (dark) {
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   }, [dark]);
 
   const save = () => {
@@ -201,7 +235,10 @@ export function SettingsPage() {
             <button
               onClick={() => setDark((d) => !d)}
               className="relative w-10 rounded-full transition-colors"
-              style={{ height: "22px", background: dark ? "var(--color-primary)" : "var(--color-muted-foreground)" + "40" }}
+              style={{
+                height: "22px",
+                background: dark ? "var(--color-primary)" : "var(--color-muted-foreground)" + "40",
+              }}
             >
               <span
                 className="absolute top-0.5 rounded-full bg-white shadow transition-all"
@@ -224,7 +261,12 @@ export function SettingsPage() {
             <button
               onClick={() => setNotifications((n) => !n)}
               className="relative w-10 rounded-full transition-colors"
-              style={{ height: "22px", background: notifications ? "var(--color-status-success)" : "var(--color-muted-foreground)" + "40" }}
+              style={{
+                height: "22px",
+                background: notifications
+                  ? "var(--color-status-success)"
+                  : "var(--color-muted-foreground)" + "40",
+              }}
             >
               <span
                 className="absolute top-0.5 rounded-full bg-white shadow transition-all"
@@ -247,7 +289,10 @@ export function SettingsPage() {
                 const perm = await Notification.requestPermission();
                 if (perm === "granted") {
                   localStorage.setItem("prism-browser-notifs", "1");
-                  new Notification("Prism", { body: "Browser notifications enabled!", icon: "/favicon.ico" });
+                  new Notification("Prism", {
+                    body: "Browser notifications enabled!",
+                    icon: "/favicon.ico",
+                  });
                   toast.success("Browser notifications enabled");
                 } else {
                   localStorage.removeItem("prism-browser-notifs");
@@ -256,7 +301,9 @@ export function SettingsPage() {
               }}
               className="text-xs px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 font-semibold text-foreground transition-colors"
             >
-              {typeof window !== "undefined" && Notification.permission === "granted" ? "✓ Enabled" : "Enable"}
+              {typeof window !== "undefined" && Notification.permission === "granted"
+                ? "✓ Enabled"
+                : "Enable"}
             </button>
           ),
         },
@@ -300,7 +347,9 @@ export function SettingsPage() {
           className="rounded-2xl bg-card border border-border overflow-hidden"
         >
           <div className="px-4 py-3 border-b border-border">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {title}
+            </span>
           </div>
           <div className="divide-y divide-border">
             {items.map(({ icon: Icon, label, desc, control }) => (
@@ -347,7 +396,11 @@ export function SettingsPage() {
           type="file"
           accept=".json"
           className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) importSettings(f); e.target.value = ""; }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) importSettings(f);
+            e.target.value = "";
+          }}
         />
         <button
           onClick={() => {

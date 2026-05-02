@@ -147,11 +147,15 @@ async function handleChatMessage(ws, content) {
 
   if (!openai) {
     // No AI — send a simple text reply
-    ws.send(JSON.stringify({
-      type: "chat-stream", id: replyId,
-      token: "⚠️ ไม่มี AI API ครับ กรุณาตั้งค่า `OPENROUTER_API_KEY` ใน `.env` แล้วรัน bridge ใหม่",
-      done: true,
-    }));
+    ws.send(
+      JSON.stringify({
+        type: "chat-stream",
+        id: replyId,
+        token:
+          "⚠️ ไม่มี AI API ครับ กรุณาตั้งค่า `OPENROUTER_API_KEY` ใน `.env` แล้วรัน bridge ใหม่",
+        done: true,
+      }),
+    );
     return;
   }
 
@@ -188,11 +192,14 @@ async function handleChatMessage(ws, content) {
   } catch (err) {
     log(`⚠️  Chat stream error: ${err.message}`);
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: "chat-stream", id: replyId,
-        token: `\n\n❌ Error: ${err.message}`,
-        done: true,
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "chat-stream",
+          id: replyId,
+          token: `\n\n❌ Error: ${err.message}`,
+          done: true,
+        }),
+      );
     }
   }
 }
@@ -260,7 +267,12 @@ async function getClaudePlan(command) {
       messages: [{ role: "user", content: `งาน: ${command}` }],
     });
     const text = msg.content[0].type === "text" ? msg.content[0].text : "";
-    return JSON.parse(text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+    return JSON.parse(
+      text
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim(),
+    );
   } catch (err) {
     log(`⚠️  Claude plan ล้มเหลว: ${err.message}`);
     return null;
@@ -270,7 +282,7 @@ async function getClaudePlan(command) {
 // ─── Fallback command plans ────────────────────────────────────────────────
 
 const commandPlans = {
-  "ส่งอีเมล": {
+  ส่งอีเมล: {
     steps: [
       { label: "วิเคราะห์ผู้รับและจุดประสงค์", detail: null, duration: 600 },
       { label: "ร่างเนื้อหาอีเมล", detail: "ใช้น้ำเสียงเป็นกันเอง", duration: 900 },
@@ -279,7 +291,7 @@ const commandPlans = {
     ],
     result: "ส่งอีเมลเรียบร้อย! 📬",
   },
-  "ค้นหาข้อมูล": {
+  ค้นหาข้อมูล: {
     steps: [
       { label: "เชื่อมต่อแหล่งข้อมูล", detail: null, duration: 500 },
       { label: "กำลังค้นหา", detail: "สแกน 3 ดัชนี", duration: 800 },
@@ -288,7 +300,7 @@ const commandPlans = {
     ],
     result: "พบข้อมูลที่เกี่ยวข้อง 12 รายการ",
   },
-  "นัดประชุม": {
+  นัดประชุม: {
     steps: [
       { label: "ตรวจสอบปฏิทินว่าง", detail: null, duration: 700 },
       { label: "หาช่วงเวลาที่ตรงกัน", detail: "ผู้เข้าร่วม 3 คน", duration: 700 },
@@ -297,7 +309,7 @@ const commandPlans = {
     ],
     result: "นัดประชุมเรียบร้อย พรุ่งนี้เวลา 15:00 น. ✅",
   },
-  "สร้างรายงาน": {
+  สร้างรายงาน: {
     steps: [
       { label: "ดึงข้อมูลจากคลัง", detail: null, duration: 700 },
       { label: "ประมวลผลตัวชี้วัด", detail: null, duration: 900 },
@@ -306,7 +318,7 @@ const commandPlans = {
     ],
     result: "สร้างรายงานและบันทึกลง Drive เรียบร้อยแล้ว 📊",
   },
-  "ตรวจสอบงาน": {
+  ตรวจสอบงาน: {
     steps: [
       { label: "ดึง Task list", detail: null, duration: 500 },
       { label: "จัดกลุ่มตามความเร่งด่วน", detail: null, duration: 600 },
@@ -315,7 +327,7 @@ const commandPlans = {
     ],
     result: "พบ 3 งานเร่งด่วน และ 7 งานปกติ 📋",
   },
-  "ตอบลูกค้า": {
+  ตอบลูกค้า: {
     steps: [
       { label: "อ่านข้อความจากลูกค้า", detail: null, duration: 400 },
       { label: "ค้นหาข้อมูลจาก Knowledge Base", detail: null, duration: 800 },
@@ -324,7 +336,7 @@ const commandPlans = {
     ],
     result: "ตอบลูกค้าเรียบร้อยแล้ว! ✉️",
   },
-  "สรุปข่าว": {
+  สรุปข่าว: {
     steps: [
       { label: "ดึงข่าวจาก RSS feeds", detail: null, duration: 600 },
       { label: "กรองข่าวที่เกี่ยวข้อง", detail: "จาก 47 บทความ", duration: 700 },
@@ -333,7 +345,7 @@ const commandPlans = {
     ],
     result: "สรุปข่าววันนี้เรียบร้อย! 📰 คัดสรร 8 บทความสำคัญ",
   },
-  "จัดการไฟล์": {
+  จัดการไฟล์: {
     steps: [
       { label: "สแกนโฟลเดอร์เป้าหมาย", detail: null, duration: 500 },
       { label: "จัดหมวดหมู่ไฟล์", detail: "ตามประเภทและวันที่", duration: 800 },
@@ -376,14 +388,22 @@ async function executeWithHermes(command, chatId) {
   broadcast({ type: "status", status: "working", message: "ส่งคำสั่งไปยัง Hermes แล้วครับ…" });
   broadcast({
     type: "task-start",
-    task: { id: taskId, command, result: "", status: "working", timestamp: now, startedAt: now, steps },
+    task: {
+      id: taskId,
+      command,
+      result: "",
+      status: "working",
+      timestamp: now,
+      startedAt: now,
+      steps,
+    },
   });
 
   const statusMsg = await bot.sendMessage(
     chatId,
     `⚡ *รับทราบครับ!*\n\nส่งคำสั่งไปยัง Hermes: *${command}*\n\n` +
       steps.map((s) => `⬜ ${s.label}`).join("\n"),
-    { parse_mode: "Markdown" }
+    { parse_mode: "Markdown" },
   );
 
   const markStep = async (idx, status, detail) => {
@@ -397,10 +417,11 @@ async function executeWithHermes(command, chatId) {
       return `⬜ ${s.label}`;
     });
     try {
-      await bot.editMessageText(
-        `⚡ *กำลังดำเนินการ: ${command}*\n\n${lines.join("\n")}`,
-        { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: "Markdown" }
-      );
+      await bot.editMessageText(`⚡ *กำลังดำเนินการ: ${command}*\n\n${lines.join("\n")}`, {
+        chat_id: chatId,
+        message_id: statusMsg.message_id,
+        parse_mode: "Markdown",
+      });
     } catch {}
   };
 
@@ -423,7 +444,11 @@ async function executeWithHermes(command, chatId) {
     tokenCount++;
     // Update dashboard every 10 tokens to show progress
     if (tokenCount % 10 === 0) {
-      broadcast({ type: "status", status: "working", message: `Hermes กำลังตอบ… (${tokenCount} tokens)` });
+      broadcast({
+        type: "status",
+        status: "working",
+        message: `Hermes กำลังตอบ… (${tokenCount} tokens)`,
+      });
     }
   });
 
@@ -465,13 +490,21 @@ async function executeWithPlan(command, chatId) {
   broadcast({ type: "status", status: "working", message: "รับทราบครับ! กำลังจัดการ…" });
   broadcast({
     type: "task-start",
-    task: { id: taskId, command, result: "", status: "working", timestamp: now, startedAt: now, steps },
+    task: {
+      id: taskId,
+      command,
+      result: "",
+      status: "working",
+      timestamp: now,
+      startedAt: now,
+      steps,
+    },
   });
 
   const statusMsg = await bot.sendMessage(
     chatId,
     `⚡ *รับทราบครับ!*\n\nกำลังดำเนินการ: *${command}*\n\n${steps.map((s) => `⬜ ${s.label}`).join("\n")}`,
-    { parse_mode: "Markdown" }
+    { parse_mode: "Markdown" },
   );
 
   const completedSteps = [];
@@ -480,11 +513,19 @@ async function executeWithPlan(command, chatId) {
     const step = steps[i];
 
     await sleep(planStep.duration * 0.7);
-    broadcast({ type: "task-step", taskId, step: { ...step, status: "running", startedAt: Date.now() } });
+    broadcast({
+      type: "task-step",
+      taskId,
+      step: { ...step, status: "running", startedAt: Date.now() },
+    });
     broadcast({ type: "status", status: "working", message: `${step.label}…` });
 
     await sleep(planStep.duration * 0.3);
-    broadcast({ type: "task-step", taskId, step: { ...step, status: "done", completedAt: Date.now() } });
+    broadcast({
+      type: "task-step",
+      taskId,
+      step: { ...step, status: "done", completedAt: Date.now() },
+    });
 
     completedSteps.push(step);
     const remaining = steps.slice(completedSteps.length);
@@ -493,9 +534,10 @@ async function executeWithPlan(command, chatId) {
         `⚡ *กำลังดำเนินการ: ${command}*\n\n` +
           completedSteps.map((s) => `✅ ${s.label}`).join("\n") +
           (remaining.length > 0
-            ? "\n" + remaining.map((s, ri) => (ri === 0 ? `⏳ ${s.label}` : `⬜ ${s.label}`)).join("\n")
+            ? "\n" +
+              remaining.map((s, ri) => (ri === 0 ? `⏳ ${s.label}` : `⬜ ${s.label}`)).join("\n")
             : ""),
-        { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: "Markdown" }
+        { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: "Markdown" },
       );
     } catch {}
   }
@@ -562,7 +604,7 @@ bot.on("message", async (msg) => {
           .map((k) => `• ${k}`)
           .join("\n") +
         `\n\nหรือพิมพ์อะไรก็ได้ — Hermes จะตอบให้!`,
-      { parse_mode: "Markdown" }
+      { parse_mode: "Markdown" },
     );
     return;
   }
@@ -574,7 +616,7 @@ bot.on("message", async (msg) => {
         `🔌 Web App: ${clients.size > 0 ? `${clients.size} client เชื่อมต่ออยู่` : "ไม่มีการเชื่อมต่อ"}\n` +
         `🤖 Bot: พร้อมรับงาน\n` +
         `🧠 AI: ${openai ? `Hermes (${HERMES_MODEL})` : anthropic ? "Claude AI" : "Fallback mode"}`,
-      { parse_mode: "Markdown" }
+      { parse_mode: "Markdown" },
     );
     return;
   }
@@ -587,7 +629,7 @@ bot.on("message", async (msg) => {
         `/status — ตรวจสอบสถานะระบบ\n` +
         `/help — แสดงความช่วยเหลือ\n\n` +
         `หรือพิมพ์อะไรก็ได้ เช่น "สรุปข่าว" หรือ "ช่วยเขียน email ถึงลูกค้า"`,
-      { parse_mode: "Markdown" }
+      { parse_mode: "Markdown" },
     );
     return;
   }
@@ -613,7 +655,10 @@ bot.on("polling_error", (err) => log(`❌ Polling error: ${err.message}`));
 function shutdown(signal) {
   log(`${signal} — ปิด bridge อย่างสะอาด...`);
   bot.stopPolling();
-  wss.close(() => { log("✅ ปิดเรียบร้อยครับ"); process.exit(0); });
+  wss.close(() => {
+    log("✅ ปิดเรียบร้อยครับ");
+    process.exit(0);
+  });
   setTimeout(() => process.exit(1), 5000);
 }
 
@@ -628,4 +673,6 @@ log(`🔌 WebSocket server: ws://localhost:${WS_PORT}`);
 if (WS_SECRET) log(`🔐 WebSocket auth: เปิดอยู่`);
 if (ALLOWED_CHAT_IDS) log(`✅ Allowed chat IDs: ${[...ALLOWED_CHAT_IDS].join(", ")}`);
 log(`⏱  Rate limit: ${RATE_LIMIT_PER_MIN} คำสั่ง/นาที`);
-log(`🧠 AI: ${openai ? `Hermes LLM (${HERMES_MODEL})` : anthropic ? "Claude AI (fallback)" : "Hardcoded plans"}\n`);
+log(
+  `🧠 AI: ${openai ? `Hermes LLM (${HERMES_MODEL})` : anthropic ? "Claude AI (fallback)" : "Hardcoded plans"}\n`,
+);

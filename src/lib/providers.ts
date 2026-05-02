@@ -17,7 +17,14 @@ export type ProviderId =
   | "huggingface"
   | "custom";
 
-export type ModelCategory = "chat" | "reasoning" | "code" | "vision" | "free" | "fast" | "embedding";
+export type ModelCategory =
+  | "chat"
+  | "reasoning"
+  | "code"
+  | "vision"
+  | "free"
+  | "fast"
+  | "embedding";
 
 export interface ProviderInfo {
   id: ProviderId;
@@ -326,12 +333,13 @@ export const MODEL_PRESETS: ModelPreset[] = [
   },
 ];
 
-export const CATEGORY_INFO: Record<ModelCategory, { label: string; emoji: string; color: string }> = {
-  free: { label: "ฟรี", emoji: "🆓", color: "#10b981" },
-  fast: { label: "เร็ว", emoji: "⚡", color: "#f59e0b" },
-  reasoning: { label: "คิดลึก", emoji: "🧠", color: "#8b5cf6" },
-  code: { label: "เขียนโค้ด", emoji: "💻", color: "#06b6d4" },
-  vision: { label: "เห็นภาพ", emoji: "👁️", color: "#ec4899" },
-  chat: { label: "พูดคุย", emoji: "💬", color: "#6366f1" },
-  embedding: { label: "Embedding", emoji: "🔢", color: "#64748b" },
-};
+export const CATEGORY_INFO: Record<ModelCategory, { label: string; emoji: string; color: string }> =
+  {
+    free: { label: "ฟรี", emoji: "🆓", color: "#10b981" },
+    fast: { label: "เร็ว", emoji: "⚡", color: "#f59e0b" },
+    reasoning: { label: "คิดลึก", emoji: "🧠", color: "#8b5cf6" },
+    code: { label: "เขียนโค้ด", emoji: "💻", color: "#06b6d4" },
+    vision: { label: "เห็นภาพ", emoji: "👁️", color: "#ec4899" },
+    chat: { label: "พูดคุย", emoji: "💬", color: "#6366f1" },
+    embedding: { label: "Embedding", emoji: "🔢", color: "#64748b" },
+  };

@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarClock, Plus, Trash2, Save, X, Play, Info, RefreshCw, Cloud, HardDrive } from "lucide-react";
+import {
+  CalendarClock,
+  Plus,
+  Trash2,
+  Save,
+  X,
+  Play,
+  Info,
+  RefreshCw,
+  Cloud,
+  HardDrive,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useHermesService } from "@/lib/hermes-context";
 import type { HermesJobConfig } from "@/lib/hermes-api-service";
@@ -32,7 +43,8 @@ function parseCron(expr: string): string {
   if (parts.length !== 5) return "รูปแบบไม่ถูกต้อง";
   const [min, hour, , , dow] = parts;
   if (expr === "* * * * *") return "ทุกนาที";
-  if (min === "0" && hour !== "*" && dow === "*") return `ทุกวัน เวลา ${hour.padStart(2, "0")}:00 น.`;
+  if (min === "0" && hour !== "*" && dow === "*")
+    return `ทุกวัน เวลา ${hour.padStart(2, "0")}:00 น.`;
   if (min.startsWith("*/")) return `ทุก ${min.slice(2)} นาที`;
   if (hour === "*" && min === "0") return "ทุกชั่วโมง";
   return expr;
@@ -231,7 +243,9 @@ export function SchedulesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ชื่องาน</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  ชื่องาน
+                </label>
                 <input
                   type="text"
                   value={form.name}
@@ -243,19 +257,32 @@ export function SchedulesPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cron Expression</label>
-                  <button onClick={() => setShowPresets((v) => !v)} className="text-xs text-primary hover:underline">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Cron Expression
+                  </label>
+                  <button
+                    onClick={() => setShowPresets((v) => !v)}
+                    className="text-xs text-primary hover:underline"
+                  >
                     เทมเพลต {showPresets ? "▲" : "▼"}
                   </button>
                 </div>
                 <AnimatePresence>
                   {showPresets && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {PRESETS.map((p) => (
                           <button
                             key={p.cron}
-                            onClick={() => { setForm((f) => ({ ...f, cron: p.cron })); setShowPresets(false); }}
+                            onClick={() => {
+                              setForm((f) => ({ ...f, cron: p.cron }));
+                              setShowPresets(false);
+                            }}
                             className="px-2.5 py-1 rounded-full bg-muted text-xs text-muted-foreground hover:text-foreground border border-border transition-colors"
                           >
                             {p.label}
@@ -317,7 +344,9 @@ export function SchedulesPage() {
           {apiJobs.length === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Cloud className="w-12 h-12 text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground text-sm">ไม่มี jobs ใน Hermes — กด "เพิ่มงาน" เพื่อเริ่มต้น</p>
+              <p className="text-muted-foreground text-sm">
+                ไม่มี jobs ใน Hermes — กด "เพิ่มงาน" เพื่อเริ่มต้น
+              </p>
             </div>
           ) : (
             <AnimatePresence initial={false}>
@@ -334,18 +363,24 @@ export function SchedulesPage() {
                     onClick={() => toggleApiJob(job)}
                     className={`mt-0.5 shrink-0 w-9 h-5 rounded-full flex items-center transition-colors ${job.enabled ? "bg-primary" : "bg-muted"}`}
                   >
-                    <span className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${job.enabled ? "translate-x-4" : "translate-x-0.5"}`} />
+                    <span
+                      className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${job.enabled ? "translate-x-4" : "translate-x-0.5"}`}
+                    />
                   </button>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold text-foreground">{job.name}</span>
                       <Cloud className="w-3.5 h-3.5 text-primary/60" />
                       {job.enabled && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-status-success/15 text-status-success border border-status-success/30">เปิด</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-status-success/15 text-status-success border border-status-success/30">
+                          เปิด
+                        </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{job.schedule}</code>
+                      <code className="font-mono bg-muted px-1.5 py-0.5 rounded">
+                        {job.schedule}
+                      </code>
                       <span>→ {parseCron(job.schedule)}</span>
                     </div>
                     <div className="mt-1 text-xs text-foreground/70">
@@ -353,10 +388,18 @@ export function SchedulesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => runApiJob(job.id!, job.name)} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="รันทันที">
+                    <button
+                      onClick={() => runApiJob(job.id!, job.name)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                      title="รันทันที"
+                    >
                       <Play className="w-4 h-4" />
                     </button>
-                    <button onClick={() => deleteApiJob(job.id!)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="ลบ">
+                    <button
+                      onClick={() => deleteApiJob(job.id!)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="ลบ"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -373,7 +416,9 @@ export function SchedulesPage() {
           {localJobs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <CalendarClock className="w-12 h-12 text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground text-sm">ยังไม่มีงาน — กด "เพิ่มงาน" เพื่อเริ่มต้น</p>
+              <p className="text-muted-foreground text-sm">
+                ยังไม่มีงาน — กด "เพิ่มงาน" เพื่อเริ่มต้น
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -391,31 +436,49 @@ export function SchedulesPage() {
                       onClick={() => toggleLocalJob(job.id)}
                       className={`mt-0.5 shrink-0 w-9 h-5 rounded-full flex items-center transition-colors ${job.enabled ? "bg-primary" : "bg-muted"}`}
                     >
-                      <span className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${job.enabled ? "translate-x-4" : "translate-x-0.5"}`} />
+                      <span
+                        className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${job.enabled ? "translate-x-4" : "translate-x-0.5"}`}
+                      />
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-foreground">{job.name}</span>
                         {job.enabled && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-status-success/15 text-status-success border border-status-success/30">เปิด</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-status-success/15 text-status-success border border-status-success/30">
+                            เปิด
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                         <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{job.cron}</code>
                         <span>→ {parseCron(job.cron)}</span>
                       </div>
-                      <div className="mt-1 text-xs text-foreground/70">คำสั่ง: <span className="font-semibold">{job.command}</span></div>
+                      <div className="mt-1 text-xs text-foreground/70">
+                        คำสั่ง: <span className="font-semibold">{job.command}</span>
+                      </div>
                       {job.lastRun && (
                         <div className="mt-0.5 text-xs text-muted-foreground/60">
-                          รันล่าสุด: {new Date(job.lastRun).toLocaleString("th-TH", { hour: "2-digit", minute: "2-digit" })}
+                          รันล่าสุด:{" "}
+                          {new Date(job.lastRun).toLocaleString("th-TH", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </div>
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => runLocalJob(job)} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="รันทันที">
+                      <button
+                        onClick={() => runLocalJob(job)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        title="รันทันที"
+                      >
                         <Play className="w-4 h-4" />
                       </button>
-                      <button onClick={() => deleteLocalJob(job.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="ลบ">
+                      <button
+                        onClick={() => deleteLocalJob(job.id)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="ลบ"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

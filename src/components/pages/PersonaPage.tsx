@@ -116,7 +116,9 @@ export function PersonaPage() {
           <User className="w-6 h-6 text-primary" />
           Soul Editor
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">กำหนดบุคลิก ค่านิยม และสไตล์การตอบของ Hermes</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          กำหนดบุคลิก ค่านิยม และสไตล์การตอบของ Hermes
+        </p>
       </div>
 
       {/* Preview card */}
@@ -132,14 +134,20 @@ export function PersonaPage() {
           <div className="font-black text-foreground text-lg">{previewName}</div>
           <div className="text-sm text-muted-foreground">AI Agent · {charCount} ตัวอักษร</div>
           <div className="mt-1 text-xs text-hermes italic truncate">
-            "{soul.split("\n").find((l) => l.trim() && !l.startsWith("#") && l.length > 10)?.trim() ?? "..."}
+            "
+            {soul
+              .split("\n")
+              .find((l) => l.trim() && !l.startsWith("#") && l.length > 10)
+              ?.trim() ?? "..."}
           </div>
         </div>
       </motion.div>
 
       {/* Presets */}
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">เทมเพลตสำเร็จรูป</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          เทมเพลตสำเร็จรูป
+        </label>
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p) => (
             <button
@@ -168,10 +176,18 @@ export function PersonaPage() {
             <span className="text-xs font-mono text-muted-foreground ml-2">SOUL.md</span>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={copy} className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-colors" title="คัดลอก">
+            <button
+              onClick={copy}
+              className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-colors"
+              title="คัดลอก"
+            >
               <Copy className="w-3.5 h-3.5" />
             </button>
-            <button onClick={reset} className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-colors" title="รีเซ็ต">
+            <button
+              onClick={reset}
+              className="p-1.5 rounded hover:bg-muted text-muted-foreground transition-colors"
+              title="รีเซ็ต"
+            >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -185,7 +201,9 @@ export function PersonaPage() {
           placeholder="เขียน soul prompt ของ Hermes ที่นี่..."
         />
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-muted/20">
-          <span className="text-xs text-muted-foreground">{charCount.toLocaleString()} ตัวอักษร</span>
+          <span className="text-xs text-muted-foreground">
+            {charCount.toLocaleString()} ตัวอักษร
+          </span>
           <button
             onClick={save}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
@@ -210,7 +228,9 @@ export function PersonaPage() {
         <div className="grid grid-cols-2 gap-2">
           {VARIABLES.map((v) => (
             <div key={v.key} className="flex items-center gap-2 text-xs">
-              <code className="px-1.5 py-0.5 rounded bg-muted font-mono text-primary shrink-0">{v.key}</code>
+              <code className="px-1.5 py-0.5 rounded bg-muted font-mono text-primary shrink-0">
+                {v.key}
+              </code>
               <span className="text-muted-foreground">{v.desc}</span>
             </div>
           ))}

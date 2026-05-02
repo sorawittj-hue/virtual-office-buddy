@@ -35,19 +35,22 @@ export function loadWebhooks(): WebhookConfig[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export function saveWebhooks(webhooks: WebhookConfig[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(webhooks)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(webhooks));
+  } catch {
+    /* ignore */
+  }
 }
 
 // ─── Trigger ──────────────────────────────────────────────────────────────────
 
-export async function triggerWebhook(
-  webhook: WebhookConfig,
-  prompt = ""
-): Promise<TriggerResult> {
+export async function triggerWebhook(webhook: WebhookConfig, prompt = ""): Promise<TriggerResult> {
   const body = webhook.payloadTemplate
     .replace(/\{\{prompt\}\}/g, prompt)
     .replace(/\{\{timestamp\}\}/g, new Date().toISOString())
@@ -63,7 +66,12 @@ export async function triggerWebhook(
     });
     const text = await res.text().catch(() => "");
     return { ok: res.ok, status: res.status, body: text, durationMs: Date.now() - start };
-  } catch (err: any) {
-    return { ok: false, status: 0, body: err?.message ?? "Network error", durationMs: Date.now() - start };
+  } catch (err: unknown) {
+    return {
+      ok: false,
+      status: 0,
+      body: err instanceof Error ? err.message : "Network error",
+      durationMs: Date.now() - start,
+    };
   }
 }

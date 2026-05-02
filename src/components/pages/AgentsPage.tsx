@@ -1,5 +1,15 @@
 import { motion } from "framer-motion";
-import { Users, Circle, Loader2, CheckCircle2, XCircle, RefreshCw, Cpu, Globe, Clock } from "lucide-react";
+import {
+  Users,
+  Circle,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Cpu,
+  Globe,
+  Clock,
+} from "lucide-react";
 import { useHermes } from "@/hooks/use-hermes";
 import { useHermesService } from "@/lib/hermes-context";
 import { useState, useEffect, useCallback } from "react";
@@ -26,15 +36,15 @@ export function AgentsPage() {
   const [loading, setLoading] = useState(false);
 
   const fetchHealth = useCallback(async () => {
-    if (!isConnected || !("fetchHealth" in service)) return;
+    if (!isConnected || !service.fetchHealth) return;
     setLoading(true);
     try {
-      const data = await (service as any).fetchHealth();
+      const data = await service.fetchHealth();
       setHealth({
         model: data.model ?? data.llm_model ?? undefined,
         uptime: data.uptime ?? undefined,
         platformsConnected: data.platforms
-          ? Object.values(data.platforms).filter((p: any) => p.connected).length
+          ? Object.values(data.platforms).filter((p) => p.connected).length
           : undefined,
         version: data.version ?? undefined,
       });
@@ -72,9 +82,7 @@ export function AgentsPage() {
             <Users className="w-6 h-6 text-primary" />
             Agents
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            AI agents connected to Prism
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">AI agents connected to Prism</p>
         </div>
         {isConnected && (
           <button
@@ -101,9 +109,13 @@ export function AgentsPage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-bold text-foreground text-lg">Hermes</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Orchestrator</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                Orchestrator
+              </span>
               {health.version && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">v{health.version}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  v{health.version}
+                </span>
               )}
             </div>
             <div className={`flex items-center gap-1.5 mt-1 text-sm font-medium ${statusColor}`}>
@@ -138,7 +150,9 @@ export function AgentsPage() {
               Platforms
             </div>
             <div className="text-xs font-semibold text-foreground">
-              {health.platformsConnected !== undefined ? `${health.platformsConnected} active` : "—"}
+              {health.platformsConnected !== undefined
+                ? `${health.platformsConnected} active`
+                : "—"}
             </div>
           </div>
           <div className="rounded-xl bg-muted/40 px-3 py-2.5 flex flex-col gap-0.5">
@@ -175,7 +189,9 @@ export function AgentsPage() {
           className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground"
         >
           Connect to Hermes Agent via{" "}
-          <a href="/gateway" className="text-primary hover:underline font-medium">Gateway</a>{" "}
+          <a href="/gateway" className="text-primary hover:underline font-medium">
+            Gateway
+          </a>{" "}
           to see live agent status, model info, uptime, and active platforms.
         </motion.div>
       )}
