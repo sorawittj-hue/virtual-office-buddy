@@ -32,6 +32,20 @@ One agent. Many channels. Full control.
 
 ## Features
 
+### Connection Modes
+
+Prism supports two runtime connection modes.
+
+**Standalone Mode** works without a local Hermes Agent. Chat is sent through `proxy-server.js` to OpenRouter via `/api/chat`, and Sessions, Memory, and Schedules show an empty state until Hermes is connected.
+
+**Hermes Connected Mode** requires a local Hermes Agent running on port `9119`. Prism uses `proxy-server.js` on port `3001` to bootstrap the ephemeral Hermes session token, fetch real sessions, memory, crons, config, and status, and connect chat through the Hermes PTY WebSocket.
+
+Run Hermes with PTY enabled for the full connected experience:
+
+```bash
+hermes dashboard --tui --host 0.0.0.0 --port 9119 --insecure --no-open
+```
+
 ### 💬 Chat
 
 - **SSE Streaming** — real-time responses with blinking cursor

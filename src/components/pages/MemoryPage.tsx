@@ -16,6 +16,8 @@ import {
   HardDrive,
 } from "lucide-react";
 import { useHermes } from "@/hooks/use-hermes";
+import { useHermesService } from "@/lib/hermes-context";
+import { hermesProxyApi, type HermesMemoryEntry } from "@/lib/hermes-proxy-api";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -182,8 +184,11 @@ function EditRow({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export function MemoryPage() {
+  const { connectionMode } = useHermesService();
   const { log } = useHermes();
   const [memories, setMemories] = useState<MemoryEntry[]>(loadMemories);
+  const [hermesMemories, setHermesMemories] = useState<HermesMemoryEntry[]>([]);
+  const [loadingHermesMemory, setLoadingHermesMemory] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCat, setFilterCat] = useState<MemoryCategory | "all">("all");
   const [addingNew, setAddingNew] = useState(false);
@@ -193,6 +198,26 @@ export function MemoryPage() {
   useEffect(() => {
     saveMemories(memories);
   }, [memories]);
+
+  useEffect(() => {
+    if (connectionMode !== "hermes") return;
+    let cancelled = false;
+    setLoadingHermesMemory(true);
+    hermesProxyApi
+      .memory()
+      .then((items) => {
+        if (!cancelled) setHermesMemories(items);
+      })
+      .catch(() => {
+        if (!cancelled) setHermesMemories([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingHermesMemory(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [connectionMode]);
 
   const filtered = memories.filter((m) => {
     const matchSearch =
@@ -236,6 +261,68 @@ export function MemoryPage() {
       toast.success("ล้าง memory ทั้งหมดแล้ว");
     }
   };
+
+  if (connectionMode === "standalone") {
+    return (
+      <div className="p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">
+        <div>
+          <h1 className="text-2xl font-black text-foreground flex items-center gap-2.5">
+            <Brain className="w-6 h-6 text-primary" />
+            Memory
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">Connect to Hermes Agent to see data</p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Brain className="w-12 h-12 text-muted-foreground/30 mb-3" />
+          <p className="text-muted-foreground text-sm">Connect to Hermes Agent to see data</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (connectionMode === "hermes") {
+    return (
+      <div className="p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">
+        <div>
+          <h1 className="text-2xl font-black text-foreground flex items-center gap-2.5">
+            <Brain className="w-6 h-6 text-primary" />
+            Memory
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Real memory from Hermes Agent ({hermesMemories.length} entries)
+          </p>
+        </div>
+        <div className="rounded-2xl bg-card border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+            <Tag className="w-4 h-4 text-primary" />
+            <span className="font-bold text-sm text-foreground">Hermes Memory</span>
+          </div>
+          {loadingHermesMemory ? (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+              Loading Hermes memory...
+            </div>
+          ) : hermesMemories.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground italic">
+              No Hermes memory entries found
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {hermesMemories.map((entry, index) => (
+                <div key={entry.id ?? index} className="px-4 py-3">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {entry.key ?? entry.category ?? "Memory"}
+                  </div>
+                  <div className="text-sm text-foreground mt-0.5">
+                    {entry.value ?? entry.content ?? JSON.stringify(entry)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">

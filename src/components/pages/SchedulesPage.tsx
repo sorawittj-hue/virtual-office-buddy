@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { useHermesService } from "@/lib/hermes-context";
 import type { HermesJobConfig } from "@/lib/hermes-api-service";
+import { hermesProxyApi, type HermesCron } from "@/lib/hermes-proxy-api";
 
 interface LocalJob {
   id: string;
@@ -64,11 +65,12 @@ function saveLocal(jobs: LocalJob[]) {
 }
 
 export function SchedulesPage() {
-  const { apiService, wsState } = useHermesService();
+  const { apiService, wsState, connectionMode } = useHermesService();
   const isApiConnected = wsState?.status === "connected" && !!apiService;
 
   const [localJobs, setLocalJobs] = useState<LocalJob[]>(loadLocal);
   const [apiJobs, setApiJobs] = useState<HermesJobConfig[]>([]);
+  const [hermesCrons, setHermesCrons] = useState<HermesCron[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", cron: "0 8 * * *", command: "" });
@@ -95,6 +97,26 @@ export function SchedulesPage() {
     if (isApiConnected) fetchApiJobs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isApiConnected]);
+
+  useEffect(() => {
+    if (connectionMode !== "hermes") return;
+    let cancelled = false;
+    setLoading(true);
+    hermesProxyApi
+      .crons()
+      .then((crons) => {
+        if (!cancelled) setHermesCrons(crons);
+      })
+      .catch(() => {
+        if (!cancelled) setHermesCrons([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [connectionMode]);
 
   const addJob = async () => {
     if (!form.name.trim() || !form.cron.trim() || !form.command.trim()) {
@@ -180,6 +202,80 @@ export function SchedulesPage() {
     ? apiJobs.filter((j) => j.enabled).length
     : localJobs.filter((j) => j.enabled).length;
   const totalCount = isApiConnected ? apiJobs.length : localJobs.length;
+
+  if (connectionMode === "standalone") {
+    return (
+      <div className="p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">
+        <div>
+          <h1 className="text-2xl font-black text-foreground flex items-center gap-2.5">
+            <CalendarClock className="w-6 h-6 text-primary" />
+            Schedules
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">Connect to Hermes Agent to see data</p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <CalendarClock className="w-12 h-12 text-muted-foreground/30 mb-3" />
+          <p className="text-muted-foreground text-sm">Connect to Hermes Agent to see data</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (connectionMode === "hermes") {
+    return (
+      <div className="p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">
+        <div>
+          <h1 className="text-2xl font-black text-foreground flex items-center gap-2.5">
+            <CalendarClock className="w-6 h-6 text-primary" />
+            Schedules
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+            <Cloud className="w-3.5 h-3.5 text-status-success" />
+            <span className="text-status-success font-medium">Hermes Live</span>·{" "}
+            {hermesCrons.filter((cron) => cron.enabled !== false).length}/{hermesCrons.length}{" "}
+            enabled
+          </p>
+        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-16 text-muted-foreground">
+            <RefreshCw className="w-5 h-5 animate-spin mr-2" />
+            Loading Hermes crons...
+          </div>
+        ) : hermesCrons.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <CalendarClock className="w-12 h-12 text-muted-foreground/30 mb-3" />
+            <p className="text-muted-foreground text-sm">No Hermes cron jobs found</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {hermesCrons.map((cron, index) => (
+              <div key={cron.id ?? index} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`mt-1 h-2.5 w-2.5 rounded-full ${cron.enabled === false ? "bg-muted-foreground/40" : "bg-status-success"}`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold text-foreground">
+                      {cron.name ?? `Cron ${index + 1}`}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <code className="font-mono bg-muted px-1.5 py-0.5 rounded">
+                        {cron.schedule ?? cron.cron ?? "unknown"}
+                      </code>
+                      <span>{parseCron(cron.schedule ?? cron.cron ?? "")}</span>
+                    </div>
+                    <div className="mt-1 text-xs text-foreground/70">
+                      {cron.prompt ?? cron.command ?? ""}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">

@@ -2,6 +2,9 @@ import { createContext, useContext, useState, useCallback, useRef, useEffect } f
 import { hermesService } from "./hermes-service";
 import { WebSocketHermesService } from "./ws-hermes-service";
 import { HermesApiService } from "./hermes-api-service";
+import { ProxyChatService } from "./proxy-chat-service";
+import { HermesPtyService } from "./hermes-pty-service";
+import { loadConnectionMode, saveConnectionMode, type ConnectionMode } from "./connection-mode";
 import type { HermesService } from "./ws-hermes-service";
 import type { WsConnectionState } from "./ws-hermes-service";
 
@@ -9,6 +12,8 @@ interface HermesServiceContextValue {
   service: HermesService;
   wsState: WsConnectionState | null;
   apiService: HermesApiService | null;
+  connectionMode: ConnectionMode;
+  setConnectionMode: (mode: ConnectionMode) => void;
   connectApi: (url: string, apiKey?: string) => void;
   connectWs: (url: string, token?: string) => void;
   disconnect: () => void;
@@ -18,6 +23,8 @@ const HermesServiceContext = createContext<HermesServiceContextValue>({
   service: hermesService,
   wsState: null,
   apiService: null,
+  connectionMode: "standalone",
+  setConnectionMode: () => {},
   connectApi: () => {},
   connectWs: () => {},
   disconnect: () => {},
@@ -27,30 +34,39 @@ export function HermesServiceProvider({ children }: { children: React.ReactNode 
   const [service, setService] = useState<HermesService>(hermesService);
   const [wsState, setWsState] = useState<WsConnectionState | null>(null);
   const [apiService, setApiService] = useState<HermesApiService | null>(null);
-  const activeRef = useRef<WebSocketHermesService | HermesApiService | null>(null);
+  const [connectionMode, setConnectionModeState] = useState<ConnectionMode>(loadConnectionMode);
+  const activeRef = useRef<
+    WebSocketHermesService | HermesApiService | ProxyChatService | HermesPtyService | null
+  >(null);
 
-  // Auto-reconnect on mount; first-launch falls back to VITE_ env vars
   useEffect(() => {
-    const savedMode = localStorage.getItem("hermes-mode");
-    if (savedMode === "api") {
-      const url = localStorage.getItem("hermes-api-url");
-      const key = localStorage.getItem("hermes-api-key") ?? undefined;
-      if (url) startApi(url, key);
-    } else if (savedMode === "ws") {
-      const url = localStorage.getItem("hermes-ws-url");
-      const token = localStorage.getItem("hermes-ws-token") ?? undefined;
-      if (url) startWs(url, token);
+    if (connectionMode === "hermes") {
+      startHermesPty();
     } else {
-      const defaultUrl = import.meta.env.VITE_DEFAULT_API_URL as string | undefined;
-      const defaultKey = import.meta.env.VITE_DEFAULT_API_KEY as string | undefined;
-      if (defaultUrl) {
-        startApi(defaultUrl, defaultKey || undefined);
-        localStorage.setItem("hermes-mode", "api");
-        localStorage.setItem("hermes-api-url", defaultUrl);
-        if (defaultKey) localStorage.setItem("hermes-api-key", defaultKey);
-      }
+      startStandalone();
     }
-  }, []);
+    return () => activeRef.current?.disconnect();
+  }, [connectionMode]);
+
+  function startStandalone() {
+    activeRef.current?.disconnect();
+    const svc = new ProxyChatService();
+    svc.subscribeState(setWsState);
+    svc.connect();
+    activeRef.current = svc;
+    setService(svc);
+    setApiService(null);
+  }
+
+  function startHermesPty() {
+    activeRef.current?.disconnect();
+    const svc = new HermesPtyService();
+    svc.subscribeState(setWsState);
+    svc.connect();
+    activeRef.current = svc;
+    setService(svc);
+    setApiService(null);
+  }
 
   function startApi(url: string, apiKey?: string) {
     activeRef.current?.disconnect();
@@ -105,9 +121,23 @@ export function HermesServiceProvider({ children }: { children: React.ReactNode 
     localStorage.removeItem("hermes-ws-token");
   }, []);
 
+  const setConnectionMode = useCallback((mode: ConnectionMode) => {
+    saveConnectionMode(mode);
+    setConnectionModeState(mode);
+  }, []);
+
   return (
     <HermesServiceContext.Provider
-      value={{ service, wsState, apiService, connectApi, connectWs, disconnect }}
+      value={{
+        service,
+        wsState,
+        apiService,
+        connectionMode,
+        setConnectionMode,
+        connectApi,
+        connectWs,
+        disconnect,
+      }}
     >
       {children}
     </HermesServiceContext.Provider>

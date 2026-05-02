@@ -444,7 +444,7 @@ const WELCOME: ChatMessage = {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export function ChatPage() {
-  const { service, wsState } = useHermesService();
+  const { service, wsState, connectionMode } = useHermesService();
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const stored = loadMessages();
     return stored.length > 0 ? stored : [WELCOME];
@@ -466,7 +466,7 @@ export function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const isConnected = wsState?.status === "connected";
+  const isConnected = connectionMode === "standalone" || wsState?.status === "connected";
 
   useEffect(() => {
     saveMessages(messages.filter((m) => !m.streaming));

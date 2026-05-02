@@ -18,8 +18,9 @@ import {
   LayoutDashboard,
   Triangle,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useHermesService } from "@/lib/hermes-context";
+import { getTelegramState, hermesProxyApi, type HermesGatewayStatus } from "@/lib/hermes-proxy-api";
 
 const navItems = [
   { to: "/chat", icon: MessageSquare, label: "Chat" },
@@ -40,9 +41,33 @@ const navItems = [
 
 function Sidebar() {
   const { pathname } = useRouterState({ select: (s) => s.location });
-  const { wsState } = useHermesService();
+  const { wsState, connectionMode } = useHermesService();
+  const [gatewayStatus, setGatewayStatus] = useState<HermesGatewayStatus | null>(null);
 
   const isConnected = wsState?.status === "connected";
+  const telegramState = getTelegramState(gatewayStatus);
+
+  useEffect(() => {
+    if (connectionMode !== "hermes") {
+      setGatewayStatus(null);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const status = await hermesProxyApi.status();
+        if (!cancelled) setGatewayStatus(status);
+      } catch {
+        if (!cancelled) setGatewayStatus(null);
+      }
+    };
+    load();
+    const timer = setInterval(load, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [connectionMode]);
 
   return (
     <aside
@@ -97,8 +122,32 @@ function Sidebar() {
 
       {/* Connection status footer */}
       <div className="border-t border-sidebar-border/70 px-4 py-3">
+        <div className="mb-2 flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2 text-[11px]">
+          {connectionMode === "hermes" ? (
+            <>
+              <span
+                className={`h-2 w-2 rounded-full ${telegramState === "connected" ? "bg-green-400" : "bg-red-400"}`}
+              />
+              <span
+                className={`font-medium ${telegramState === "connected" ? "text-green-400" : "text-red-400"}`}
+              >
+                Telegram {telegramState === "connected" ? "✓" : "✗"}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="h-2 w-2 rounded-full bg-white/30" />
+              <span className="font-medium text-white/45">Standalone</span>
+            </>
+          )}
+        </div>
         <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2 text-[11px]">
-          {isConnected ? (
+          {connectionMode === "standalone" ? (
+            <>
+              <WifiOff className="w-3.5 h-3.5 text-white/25 shrink-0" />
+              <span className="font-medium text-white/34">No Hermes Agent</span>
+            </>
+          ) : isConnected ? (
             <>
               <Wifi className="w-3.5 h-3.5 text-green-400 shrink-0" />
               <span className="text-green-400 font-medium truncate">

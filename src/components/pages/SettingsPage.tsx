@@ -12,9 +12,12 @@ import {
   Shield,
   Download,
   Upload,
+  Network,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { GUARDRAIL_RULES, loadGuardrailConfig, saveGuardrailConfig } from "@/lib/guardrails";
+import { useHermesService } from "@/lib/hermes-context";
+import type { ConnectionMode } from "@/lib/connection-mode";
 import { toast } from "sonner";
 
 // ─── Keys that are part of the exportable backup ─────────────────────────────
@@ -24,6 +27,7 @@ const BACKUP_KEYS = [
   "hermes-memories",
   "hermes-guardrails-config",
   "prism-webhooks",
+  "prism-connection-mode",
   "hermes-gateway-url",
   "hermes-gateway-apikey",
   "theme",
@@ -200,10 +204,16 @@ function GuardrailsSection() {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function SettingsPage() {
+  const { connectionMode, setConnectionMode } = useHermesService();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [notifications, setNotifications] = useState(true);
   const [saved, setSaved] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+
+  const selectConnectionMode = (mode: ConnectionMode) => {
+    setConnectionMode(mode);
+    toast.success(mode === "hermes" ? "Hermes Connected Mode enabled" : "Standalone Mode enabled");
+  };
 
   useEffect(() => {
     const root = document.documentElement;
@@ -224,8 +234,39 @@ export function SettingsPage() {
 
   const sections = [
     {
-      title: "Appearance",
+      title: "Connection",
       delay: 0,
+      items: [
+        {
+          icon: Network,
+          label: "Connection Mode",
+          desc: "Choose direct OpenRouter chat or the local Hermes Agent at port 9119",
+          control: (
+            <div className="flex rounded-xl bg-muted/50 border border-border p-1 gap-1">
+              {[
+                ["standalone", "Standalone Mode"],
+                ["hermes", "Hermes Connected"],
+              ].map(([mode, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => selectConnectionMode(mode as ConnectionMode)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    connectionMode === mode
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ),
+        },
+      ],
+    },
+    {
+      title: "Appearance",
+      delay: 0.05,
       items: [
         {
           icon: dark ? Moon : Sun,
@@ -251,7 +292,7 @@ export function SettingsPage() {
     },
     {
       title: "Notifications",
-      delay: 0.07,
+      delay: 0.1,
       items: [
         {
           icon: Bell,
@@ -311,7 +352,7 @@ export function SettingsPage() {
     },
     {
       title: "Language",
-      delay: 0.14,
+      delay: 0.15,
       items: [
         {
           icon: Globe,
