@@ -1,4 +1,5 @@
 import { PRISM_PROXY_BASE_URL } from "./connection-mode";
+import { proxyHeaders } from "./proxy-auth";
 
 export interface HermesGatewayStatus {
   gateway_platforms?: {
@@ -50,10 +51,7 @@ export interface HermesMemoryEntry {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${PRISM_PROXY_BASE_URL}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+    headers: proxyHeaders(init?.headers),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

@@ -17,7 +17,9 @@ Do not commit real secrets. Protect:
 
 ## Public Exposure Warning
 
-Do not expose `proxy-server.js` or `telegram-bridge.js` publicly without authentication. In production, the proxy requires `PRISM_PROXY_SECRET`, and the Telegram bridge requires `WS_SECRET` plus `ALLOWED_CHAT_IDS`.
+Do not expose `proxy-server.js` or `telegram-bridge.js` publicly without authentication. In production, the proxy requires `PRISM_PROXY_SECRET` or `PRISM_BROWSER_PROXY_TOKEN`, and the Telegram bridge requires `WS_SECRET` plus `ALLOWED_CHAT_IDS`.
+
+`PRISM_PROXY_SECRET` should stay server-side. `PRISM_BROWSER_PROXY_TOKEN` is only for private browser-direct deployments because the matching `VITE_PRISM_PROXY_AUTH_TOKEN` is visible in the browser bundle.
 
 ## Reporting Vulnerabilities
 
@@ -27,5 +29,6 @@ Open a private security advisory or contact the repository maintainer with repro
 
 - Client-side guardrails are bypassable and are not a security boundary.
 - The local proxy depends on correct CORS/auth configuration.
+- Browser-visible proxy tokens are not sufficient for public internet deployments.
 - The Telegram bridge requires `ALLOWED_CHAT_IDS` and `WS_SECRET` in production.
 - In-memory rate limits reset on restart and do not coordinate across instances.

@@ -1,25 +1,25 @@
-# ── Stage 1: Install dependencies ────────────────────────────────────────────
-FROM oven/bun:1-alpine AS deps
+# Local preview image. This follows the npm/package-lock workflow used by README and CI.
+FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json bun.lockb* ./
-RUN bun install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# ── Stage 2: Build ────────────────────────────────────────────────────────────
-FROM oven/bun:1-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN bun run build
+RUN npm run build
 
-# ── Stage 3: Production runtime ───────────────────────────────────────────────
-FROM oven/bun:1-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
-
-# Copy full build output (wrangler needs node_modules for local Workers runtime)
-COPY --from=builder /app /app
-
 ENV NODE_ENV=production
+
+COPY package.json package-lock.json ./
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+
 EXPOSE 3000
 
-# Run via Wrangler local Workers runtime (Miniflare)
-CMD ["bunx", "--bun", "wrangler", "dev", "--port", "3000", "--host", "0.0.0.0", "--local"]
+# Use this image for private local preview. For public production, deploy behind
+# platform authentication/TLS or use the hosting provider's production adapter.
+CMD ["npx", "vite", "preview", "--host", "0.0.0.0", "--port", "3000"]

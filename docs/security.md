@@ -10,7 +10,9 @@
 
 ## Proxy
 
-The proxy enforces allowlisted CORS, optional bearer authentication, JSON size limits, invalid JSON handling, and basic in-memory rate limiting. In production, it fails startup if `PRISM_PROXY_SECRET` is missing.
+The proxy enforces allowlisted CORS, optional bearer authentication, JSON size limits, invalid JSON handling, and basic in-memory rate limiting. In production, it fails startup unless `PRISM_PROXY_SECRET` or `PRISM_BROWSER_PROXY_TOKEN` is set.
+
+Use `PRISM_PROXY_SECRET` only for server-to-server requests or reverse proxies that inject `Authorization`. If the browser calls the proxy directly, use `PRISM_BROWSER_PROXY_TOKEN` with matching `VITE_PRISM_PROXY_AUTH_TOKEN`, and understand that this token is visible to browser users.
 
 In-memory rate limiting is not sufficient for multiple instances or hostile public traffic. Put a real gateway, WAF, or reverse proxy in front of public deployments.
 

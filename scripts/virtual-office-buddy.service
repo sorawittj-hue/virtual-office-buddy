@@ -1,13 +1,13 @@
 # systemd service file for Virtual Office Buddy (self-hosted, no Docker)
 #
 # Install:
-#   sudo cp scripts/prism.service /etc/systemd/system/prism-dashboard.service
+#   sudo cp scripts/virtual-office-buddy.service /etc/systemd/system/virtual-office-buddy.service
 #   # Edit User= and WorkingDirectory= below to match your setup
 #   sudo systemctl daemon-reload
-#   sudo systemctl enable --now prism-dashboard
+#   sudo systemctl enable --now virtual-office-buddy
 #
 # Logs:
-#   sudo journalctl -u prism-dashboard -f
+#   sudo journalctl -u virtual-office-buddy -f
 
 [Unit]
 Description=Virtual Office Buddy
@@ -17,13 +17,13 @@ After=network.target
 Type=simple
 User=root
 Environment="HOME=/root"
-Environment="PATH=/root/.bun/bin:/root/.nvm/versions/node/v22.22.0/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
 WorkingDirectory=/root/virtual-office-buddy
 
 # Load environment from .env if present
 EnvironmentFile=-/root/virtual-office-buddy/.env
 
-ExecStart=/root/.bun/bin/bun run preview --port 3000 --host 0.0.0.0
+ExecStart=/usr/bin/npm run preview -- --port 3000 --host 0.0.0.0
 Restart=always
 RestartSec=5
 StandardOutput=journal

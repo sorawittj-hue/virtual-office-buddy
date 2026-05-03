@@ -1,6 +1,7 @@
 import type { HermesEvent } from "./hermes-types";
 import type { HermesService, WsConnectionState } from "./ws-hermes-service";
 import { PRISM_PROXY_BASE_URL } from "./connection-mode";
+import { proxyHeaders } from "./proxy-auth";
 
 export class ProxyChatService implements HermesService {
   private listeners = new Set<(e: HermesEvent) => void>();
@@ -40,7 +41,7 @@ export class ProxyChatService implements HermesService {
     try {
       const res = await fetch(`${PRISM_PROXY_BASE_URL}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: proxyHeaders(),
         body: JSON.stringify({ message: content }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

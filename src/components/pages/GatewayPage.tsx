@@ -107,7 +107,8 @@ export function GatewayPage() {
   const { wsState, connectionMode, setConnectionMode, connectApi, connectWs, disconnect } =
     useHermesService();
 
-  const savedTab = typeof window !== "undefined" ? (localStorage.getItem("hermes-mode") ?? "api") : "api";
+  const savedTab =
+    typeof window !== "undefined" ? (localStorage.getItem("hermes-mode") ?? "api") : "api";
   const [tab, setTab] = useState<"proxy" | "api" | "ws">(
     connectionMode === "standalone" ? "proxy" : (savedTab as "api" | "ws"),
   );
@@ -185,19 +186,35 @@ export function GatewayPage() {
     "# → WS server พร้อมที่ ws://localhost:18789",
   ];
 
-  const setupSteps = tab === "proxy" ? proxySetupSteps : tab === "api" ? apiSetupSteps : wsSetupSteps;
+  const setupSteps =
+    tab === "proxy" ? proxySetupSteps : tab === "api" ? apiSetupSteps : wsSetupSteps;
 
   const proxyProtocols = [
-    { dir: "POST", path: "/api/chat", desc: "Chat streaming → OpenRouter", color: "text-green-500" },
+    {
+      dir: "POST",
+      path: "/api/chat",
+      desc: "Chat streaming → OpenRouter",
+      color: "text-green-500",
+    },
     { dir: "GET", path: "/api/hermes/status", desc: "Hermes Agent status", color: "text-blue-500" },
     { dir: "GET", path: "/api/hermes/sessions", desc: "Chat sessions", color: "text-blue-500" },
     { dir: "GET", path: "/api/hermes/memory", desc: "Memory entries", color: "text-blue-500" },
     { dir: "GET", path: "/api/hermes/crons", desc: "Scheduled jobs", color: "text-yellow-500" },
-    { dir: "GET", path: "/api/hermes/pty-token", desc: "PTY WebSocket token", color: "text-purple-500" },
+    {
+      dir: "GET",
+      path: "/api/hermes/pty-token",
+      desc: "PTY WebSocket token",
+      color: "text-purple-500",
+    },
   ];
 
   const apiProtocols = [
-    { dir: "POST", path: "/v1/chat/completions", desc: "Chat + SSE streaming", color: "text-green-500" },
+    {
+      dir: "POST",
+      path: "/v1/chat/completions",
+      desc: "Chat + SSE streaming",
+      color: "text-green-500",
+    },
     { dir: "GET", path: "/v1/models", desc: "รายการ models ที่ใช้งาน", color: "text-blue-500" },
     { dir: "GET", path: "/health/detailed", desc: "สถานะและ uptime", color: "text-blue-500" },
     { dir: "GET/POST", path: "/api/jobs", desc: "Cron jobs CRUD", color: "text-yellow-500" },
@@ -206,11 +223,21 @@ export function GatewayPage() {
 
   const wsProtocols = [
     { dir: "← รับ", path: "status", desc: "อัพเดทสถานะ Hermes", color: "text-blue-500" },
-    { dir: "← รับ", path: "task-start/step/complete", desc: "lifecycle ของงาน", color: "text-blue-500" },
+    {
+      dir: "← รับ",
+      path: "task-start/step/complete",
+      desc: "lifecycle ของงาน",
+      color: "text-blue-500",
+    },
     { dir: "← รับ", path: "chat-stream", desc: "per-token streaming", color: "text-blue-500" },
     { dir: "→ ส่ง", path: "chat-message", desc: "ส่งข้อความ chat", color: "text-green-500" },
     { dir: "→ ส่ง", path: "command", desc: "สั่งให้ Hermes ทำงาน", color: "text-green-500" },
-    { dir: "↔", path: "ping/pong", desc: "keep-alive ทุก 30 วินาที", color: "text-muted-foreground" },
+    {
+      dir: "↔",
+      path: "ping/pong",
+      desc: "keep-alive ทุก 30 วินาที",
+      color: "text-muted-foreground",
+    },
   ];
 
   const protocols = tab === "proxy" ? proxyProtocols : tab === "api" ? apiProtocols : wsProtocols;
@@ -238,7 +265,9 @@ export function GatewayPage() {
         >
           <Server className="w-3.5 h-3.5" />
           Proxy
-          <span className="text-[9px] opacity-70 font-normal hidden sm:inline">ไม่ต้องมี Hermes</span>
+          <span className="text-[9px] opacity-70 font-normal hidden sm:inline">
+            ไม่ต้องมี Hermes
+          </span>
         </button>
         <button
           onClick={() => setTab("api")}
@@ -286,11 +315,13 @@ export function GatewayPage() {
             {tab === "proxy"
               ? "Proxy / Standalone"
               : tab === "api"
-              ? "Hermes Agent REST API"
-              : "WebSocket Bridge"}
+                ? "Hermes Agent REST API"
+                : "WebSocket Bridge"}
           </h2>
           {tab === "proxy" && (
-            <span className="ml-auto text-xs text-muted-foreground font-mono">{PRISM_PROXY_BASE_URL}</span>
+            <span className="ml-auto text-xs text-muted-foreground font-mono">
+              {PRISM_PROXY_BASE_URL}
+            </span>
           )}
         </div>
 
@@ -298,8 +329,19 @@ export function GatewayPage() {
 
         {tab === "proxy" ? (
           <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-            <p>Chat ส่งผ่าน <code className="font-mono text-foreground px-1 rounded bg-muted">proxy-server.js</code> → OpenRouter — ไม่ต้องมี Hermes Agent</p>
-            <p>ตั้ง URL ใน .env: <code className="font-mono text-foreground px-1 rounded bg-muted">VITE_PRISM_PROXY_URL=http://localhost:3001</code></p>
+            <p>
+              Chat ส่งผ่าน{" "}
+              <code className="font-mono text-foreground px-1 rounded bg-muted">
+                proxy-server.js
+              </code>{" "}
+              → OpenRouter — ไม่ต้องมี Hermes Agent
+            </p>
+            <p>
+              ตั้ง URL ใน .env:{" "}
+              <code className="font-mono text-foreground px-1 rounded bg-muted">
+                VITE_PRISM_PROXY_URL=http://localhost:3001
+              </code>
+            </p>
           </div>
         ) : tab === "api" ? (
           <>
@@ -476,7 +518,11 @@ export function GatewayPage() {
       >
         <div className="flex items-center gap-2 text-sm font-bold text-foreground">
           <Activity className="w-4 h-4 text-primary" />
-          {tab === "proxy" ? "Proxy Endpoints" : tab === "api" ? "API Endpoints" : "WebSocket Protocol"}
+          {tab === "proxy"
+            ? "Proxy Endpoints"
+            : tab === "api"
+              ? "API Endpoints"
+              : "WebSocket Protocol"}
         </div>
         <div className="space-y-1.5">
           {protocols.map((item) => (

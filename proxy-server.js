@@ -48,18 +48,32 @@ function loadConfig() {
     DEFAULT_DEV_ORIGINS,
   );
   const proxySecret = process.env.PRISM_PROXY_SECRET ?? "";
+  const browserProxyToken = process.env.PRISM_BROWSER_PROXY_TOKEN ?? "";
 
-  if (isProduction && !proxySecret) {
-    throw new Error("PRISM_PROXY_SECRET is required when NODE_ENV=production");
+  if (isProduction && !proxySecret && !browserProxyToken) {
+    throw new Error(
+      "PRISM_PROXY_SECRET or PRISM_BROWSER_PROXY_TOKEN is required when NODE_ENV=production",
+    );
   }
   if (isProduction && proxySecret && proxySecret.length < 24) {
     throw new Error("PRISM_PROXY_SECRET must be at least 24 characters in production");
+  }
+  if (isProduction && browserProxyToken && browserProxyToken.length < 24) {
+    throw new Error("PRISM_BROWSER_PROXY_TOKEN must be at least 24 characters in production");
   }
   if (isProduction && allowedOrigins.includes("*") && process.env.PRISM_ALLOWED_ORIGINS !== "*") {
     throw new Error('Wildcard CORS requires PRISM_ALLOWED_ORIGINS="*" explicitly');
   }
 
-  return { port, hermesUrl, maxBodyBytes, rateLimitPerMinute, allowedOrigins, proxySecret };
+  return {
+    port,
+    hermesUrl,
+    maxBodyBytes,
+    rateLimitPerMinute,
+    allowedOrigins,
+    proxySecret,
+    browserProxyToken,
+  };
 }
 
 let config;
@@ -131,9 +145,11 @@ function safeErrorMessage(err, fallback) {
 }
 
 function requireAuth(req) {
-  if (!config.proxySecret) return;
-  const expected = `Bearer ${config.proxySecret}`;
-  if (req.headers.authorization !== expected) {
+  const acceptedTokens = [config.proxySecret, config.browserProxyToken].filter(Boolean);
+  if (acceptedTokens.length === 0) return;
+  const authHeader = req.headers.authorization ?? "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  if (!acceptedTokens.includes(token)) {
     throw new HttpError(401, "Unauthorized");
   }
 }

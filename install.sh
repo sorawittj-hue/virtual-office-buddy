@@ -4,61 +4,58 @@ set -e
 echo "=== Virtual Office Buddy One-click Installer ==="
 echo ""
 
-# 1. Clone
 if [ ! -d "virtual-office-buddy" ]; then
   git clone https://github.com/sorawittj-hue/virtual-office-buddy.git
 fi
 cd virtual-office-buddy
 
-# 2. Install Bun if missing
-if ! command -v bun &>/dev/null; then
-  echo "Installing Bun..."
-  curl -fsSL https://bun.sh/install | bash
-  export PATH="$HOME/.bun/bin:$PATH"
+if ! command -v node &>/dev/null; then
+  echo "Node.js 22 is required. Install Node.js first, then rerun this script."
+  exit 1
 fi
 
-# 3. Setup .env
+if ! command -v npm &>/dev/null; then
+  echo "npm is required. Install npm first, then rerun this script."
+  exit 1
+fi
+
 if [ ! -f ".env" ]; then
   cp .env.local.example .env
   echo ""
-  echo "✏️  แก้ไข .env ก่อนดำเนินการต่อ:"
-  echo "   - VITE_DEFAULT_API_URL  (URL ของ Hermes Agent)"
-  echo "   - VITE_DEFAULT_API_KEY  (ถ้ามี API key)"
+  echo "Edit .env before continuing:"
+  echo "   - OPENROUTER_API_KEY or OPENAI_API_KEY for standalone chat"
+  echo "   - VITE_HERMES_LOCAL_URL if using Hermes mode"
+  echo "   - PRISM_BROWSER_PROXY_TOKEN / VITE_PRISM_PROXY_AUTH_TOKEN for private browser-direct proxy auth"
   echo ""
-  read -rp "กด Enter เมื่อแก้ไข .env เสร็จแล้ว..."
+  read -rp "Press Enter after editing .env..."
 fi
 
-# 4. Install dependencies
 echo ""
 echo "Installing dependencies..."
-bun install
+npm ci
 
-# 5. Build
 echo ""
 echo "Building..."
-bun run build
+npm run build
 
-# 6. Install systemd service (Linux only)
 if command -v systemctl &>/dev/null; then
-  # Patch service file paths to match current user + directory
   INSTALL_DIR="$(pwd)"
   CURRENT_USER="$(whoami)"
   sed \
     -e "s|User=root|User=$CURRENT_USER|" \
     -e "s|WorkingDirectory=/root/virtual-office-buddy|WorkingDirectory=$INSTALL_DIR|" \
     -e "s|EnvironmentFile=-/root/virtual-office-buddy/.env|EnvironmentFile=-$INSTALL_DIR/.env|" \
-    -e "s|ExecStart=/root/.bun/bin/bun|ExecStart=$(which bun)|" \
-    scripts/prism.service | sudo tee /etc/systemd/system/prism-dashboard.service > /dev/null
+    scripts/virtual-office-buddy.service | sudo tee /etc/systemd/system/virtual-office-buddy.service >/dev/null
   sudo systemctl daemon-reload
-  sudo systemctl enable --now prism-dashboard
+  sudo systemctl enable --now virtual-office-buddy
   echo ""
   echo "Installed! Virtual Office Buddy is running as a systemd service"
   echo "   http://localhost:3000"
   echo ""
-  echo "   ดู logs: sudo journalctl -u prism-dashboard -f"
+  echo "   Logs: sudo journalctl -u virtual-office-buddy -f"
 else
   echo ""
-  echo "✅ Build เสร็จแล้ว! รันด้วย:"
-  echo "   bun run preview --port 3000 --host 0.0.0.0"
-  echo "   แล้วเปิด http://localhost:3000"
+  echo "Build complete. Run:"
+  echo "   npm run preview -- --port 3000 --host 0.0.0.0"
+  echo "   then open http://localhost:3000"
 fi

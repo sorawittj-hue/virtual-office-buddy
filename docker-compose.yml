@@ -1,29 +1,29 @@
 services:
-  prism:
+  virtual-office-buddy:
     build: .
-    container_name: prism-dashboard
+    container_name: virtual-office-buddy
     restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
       - path: .env
-        required: false # copy .env.example → .env to override defaults
+        required: false # copy .env.example to .env to override defaults
     environment:
       - NODE_ENV=production
 
-  # ── Optional: Nginx reverse proxy with SSL ──────────────────────────────────
+  # Optional: Nginx reverse proxy with SSL.
   # Uncomment to serve on port 80/443 with a domain name.
-  # Requires: ./nginx/prism.conf and SSL certs in ./nginx/certs/
+  # Requires: ./nginx/virtual-office-buddy.conf and SSL certs in ./nginx/certs/
   #
   # nginx:
   #   image: nginx:alpine
-  #   container_name: prism-nginx
+  #   container_name: virtual-office-buddy-nginx
   #   restart: unless-stopped
   #   ports:
   #     - "80:80"
   #     - "443:443"
   #   volumes:
-  #     - ./nginx/prism.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - ./nginx/virtual-office-buddy.conf:/etc/nginx/conf.d/default.conf:ro
   #     - ./nginx/certs:/etc/nginx/certs:ro
   #   depends_on:
-  #     - prism
+  #     - virtual-office-buddy
