@@ -330,7 +330,7 @@ export function SettingsPage() {
                 const perm = await Notification.requestPermission();
                 if (perm === "granted") {
                   localStorage.setItem("prism-browser-notifs", "1");
-                  new Notification("Prism", {
+                  new Notification("Virtual Office Buddy", {
                     body: "Browser notifications enabled!",
                     icon: "/favicon.ico",
                   });

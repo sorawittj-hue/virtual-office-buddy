@@ -392,7 +392,7 @@ export function ToolsPage() {
 
   const testWebhook = async (wh: WebhookConfig) => {
     toast.info(`กำลังทดสอบ ${wh.name}…`);
-    const result = await triggerWebhook(wh, "test from Prism");
+    const result = await triggerWebhook(wh, "test from Virtual Office Buddy");
     setWebhooks((prev) =>
       prev.map((w) =>
         w.id === wh.id

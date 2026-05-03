@@ -24,16 +24,37 @@
 import TelegramBot from "node-telegram-bot-api";
 import { WebSocketServer, WebSocket } from "ws";
 import { randomUUID } from "crypto";
+import {
+  createRateLimiter,
+  escapeTelegramHtml,
+  parsePositiveInteger,
+  simulatedResult,
+} from "./server-utils.js";
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const WS_PORT = Number(process.env.WS_PORT ?? 18789);
+const isProduction = process.env.NODE_ENV === "production";
+const WS_PORT = parsePositiveInteger(process.env.WS_PORT, 18789, "WS_PORT", {
+  min: 1,
+  max: 65535,
+});
 const WS_SECRET = process.env.WS_SECRET ?? "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
 const HERMES_MODEL = process.env.HERMES_MODEL ?? "nousresearch/hermes-3-llama-3.1-405b:free";
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
-const RATE_LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN ?? 5);
+const RATE_LIMIT_PER_MIN = parsePositiveInteger(
+  process.env.RATE_LIMIT_PER_MIN,
+  5,
+  "RATE_LIMIT_PER_MIN",
+  { min: 1, max: 1000 },
+);
+const MAX_COMMAND_CHARS = parsePositiveInteger(
+  process.env.MAX_COMMAND_CHARS,
+  4000,
+  "MAX_COMMAND_CHARS",
+  { min: 1, max: 20000 },
+);
 
 const ALLOWED_CHAT_IDS = process.env.ALLOWED_CHAT_IDS
   ? new Set(process.env.ALLOWED_CHAT_IDS.split(",").map((s) => s.trim()))
@@ -41,6 +62,18 @@ const ALLOWED_CHAT_IDS = process.env.ALLOWED_CHAT_IDS
 
 if (!TOKEN) {
   console.error("❌ ไม่พบ TELEGRAM_BOT_TOKEN ใน .env");
+  process.exit(1);
+}
+if (isProduction && !WS_SECRET) {
+  console.error("WS_SECRET is required when NODE_ENV=production");
+  process.exit(1);
+}
+if (isProduction && WS_SECRET.length < 24) {
+  console.error("WS_SECRET must be at least 24 characters when NODE_ENV=production");
+  process.exit(1);
+}
+if (isProduction && !ALLOWED_CHAT_IDS) {
+  console.error("ALLOWED_CHAT_IDS is required when NODE_ENV=production");
   process.exit(1);
 }
 
@@ -61,7 +94,7 @@ if (OPENROUTER_API_KEY) {
     apiKey: OPENROUTER_API_KEY,
     defaultHeaders: {
       "HTTP-Referer": "https://github.com/sorawittj-hue/virtual-office-buddy",
-      "X-Title": "Prism — Dashboard for Hermes Agent",
+      "X-Title": "Virtual Office Buddy",
     },
   });
   log(`🤖 Hermes (OpenRouter) พร้อมแล้ว — model: ${HERMES_MODEL}`);
@@ -82,18 +115,8 @@ if (!openai && !anthropic) {
 
 // ─── Rate limiting ─────────────────────────────────────────────────────────
 
-const rateLimits = new Map();
-
-function checkRateLimit(chatId) {
-  const now = Date.now();
-  const key = String(chatId);
-  let limit = rateLimits.get(key) ?? { count: 0, resetAt: now + 60_000 };
-  if (now > limit.resetAt) limit = { count: 0, resetAt: now + 60_000 };
-  if (limit.count >= RATE_LIMIT_PER_MIN) return false;
-  limit.count++;
-  rateLimits.set(key, limit);
-  return true;
-}
+const checkRateLimit = createRateLimiter(RATE_LIMIT_PER_MIN);
+const checkWsRateLimit = createRateLimiter(RATE_LIMIT_PER_MIN);
 
 // ─── WebSocket server ───────────────────────────────────────────────────────
 
@@ -105,10 +128,18 @@ const chatHistories = new Map(); // ws -> [{role, content}]
 wss.on("connection", (ws, req) => {
   if (WS_SECRET) {
     const params = new URL(req.url ?? "/", "http://localhost").searchParams;
-    if (params.get("token") !== WS_SECRET) {
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const queryToken = params.get("token") ?? "";
+    if (bearerToken !== WS_SECRET && queryToken !== WS_SECRET) {
       ws.close(4001, "Unauthorized");
       log(`🚫 WebSocket: ปฏิเสธการเชื่อมต่อ (token ไม่ถูกต้อง) จาก ${req.socket.remoteAddress}`);
       return;
+    }
+    if (!bearerToken && queryToken) {
+      log(
+        "Warning: WebSocket query-string token accepted for compatibility; prefer Authorization: Bearer in production.",
+      );
     }
   }
 
@@ -123,7 +154,16 @@ wss.on("connection", (ws, req) => {
       if (msg.type === "ping") {
         ws.send(JSON.stringify({ type: "pong", ts: Date.now() }));
       } else if (msg.type === "chat-message" && msg.content) {
-        handleChatMessage(ws, String(msg.content));
+        if (!checkWsRateLimit(req.socket.remoteAddress ?? "ws-client")) {
+          ws.send(JSON.stringify({ type: "error", message: "Rate limit exceeded" }));
+          return;
+        }
+        const content = String(msg.content);
+        if (content.length > MAX_COMMAND_CHARS) {
+          ws.send(JSON.stringify({ type: "error", message: "Message is too long" }));
+          return;
+        }
+        handleChatMessage(ws, content);
       }
     } catch {}
   });
@@ -195,7 +235,7 @@ async function handleChatMessage(ws, content) {
       ws.send(
         JSON.stringify({
           type: "chat-stream",
-          id: replyId,
+          token: isProduction ? "\n\nRequest failed." : `\n\nError: ${err.message}`,
           token: `\n\n❌ Error: ${err.message}`,
           done: true,
         }),
@@ -475,7 +515,10 @@ async function executeWithHermes(command, chatId) {
 
 async function executeWithPlan(command, chatId) {
   let plan = await getClaudePlan(command);
-  if (!plan) plan = commandPlans[command] ?? defaultPlan(command);
+  if (!plan) {
+    plan = commandPlans[command] ?? defaultPlan(command);
+    plan = { ...plan, result: simulatedResult(plan.result) };
+  }
 
   const taskId = randomUUID();
   const now = Date.now();
@@ -579,6 +622,16 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text?.trim();
   if (!text) return;
+  if (text.length > MAX_COMMAND_CHARS) {
+    await bot.sendMessage(
+      chatId,
+      `Message is too long. Limit: ${escapeTelegramHtml(MAX_COMMAND_CHARS)} characters.`,
+      {
+        parse_mode: "HTML",
+      },
+    );
+    return;
+  }
 
   const username = msg.from?.username ?? String(chatId);
   log(`📨 Telegram [${username}]: ${text}`);
@@ -642,9 +695,11 @@ bot.on("message", async (msg) => {
   try {
     await executeCommand(text, chatId);
   } catch (err) {
-    log(`❌ Error: ${err.message}`);
-    await bot.sendMessage(chatId, `❌ เกิดข้อผิดพลาด: ${err.message}`);
-    broadcast({ type: "status", status: "error", message: `เกิดข้อผิดพลาด: ${err.message}` });
+    const userMessage = isProduction
+      ? "Request failed. Check server logs for details."
+      : escapeTelegramHtml(err.message);
+    await bot.sendMessage(chatId, userMessage, { parse_mode: "HTML" });
+    broadcast({ type: "status", status: "error", message: userMessage });
   }
 });
 

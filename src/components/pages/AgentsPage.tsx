@@ -82,7 +82,9 @@ export function AgentsPage() {
             <Users className="w-6 h-6 text-primary" />
             Agents
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">AI agents connected to Prism</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            AI agents connected to Virtual Office Buddy
+          </p>
         </div>
         {isConnected && (
           <button

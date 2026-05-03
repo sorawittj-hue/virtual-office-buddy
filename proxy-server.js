@@ -1,14 +1,81 @@
 import http from "node:http";
 import { URL } from "node:url";
 import OpenAI from "openai";
+import {
+  HttpError,
+  createRateLimiter,
+  getCorsOrigin,
+  parseAllowedOrigins,
+  parsePositiveInteger,
+  parseUrl,
+  readJsonBody,
+  validateChatInput,
+} from "./server-utils.js";
 
-const PORT = Number(process.env.PRISM_PROXY_PORT ?? 3001);
-const HERMES_URL = process.env.VITE_HERMES_LOCAL_URL ?? "http://localhost:9119";
+const DEFAULT_DEV_ORIGINS = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+
+const isProduction = process.env.NODE_ENV === "production";
+
+function loadConfig() {
+  const port = parsePositiveInteger(process.env.PRISM_PROXY_PORT, 3001, "PRISM_PROXY_PORT", {
+    min: 1,
+    max: 65535,
+  });
+  const hermesUrl = parseUrl(
+    process.env.VITE_HERMES_LOCAL_URL,
+    "http://localhost:9119",
+    "VITE_HERMES_LOCAL_URL",
+  );
+  const maxBodyBytes = parsePositiveInteger(
+    process.env.PRISM_MAX_BODY_BYTES,
+    1_048_576,
+    "PRISM_MAX_BODY_BYTES",
+    { min: 1_024, max: 10_485_760 },
+  );
+  const rateLimitPerMinute = parsePositiveInteger(
+    process.env.PRISM_RATE_LIMIT_PER_MIN,
+    30,
+    "PRISM_RATE_LIMIT_PER_MIN",
+    { min: 1, max: 10_000 },
+  );
+  const allowedOrigins = parseAllowedOrigins(
+    process.env.PRISM_ALLOWED_ORIGINS,
+    DEFAULT_DEV_ORIGINS,
+  );
+  const proxySecret = process.env.PRISM_PROXY_SECRET ?? "";
+
+  if (isProduction && !proxySecret) {
+    throw new Error("PRISM_PROXY_SECRET is required when NODE_ENV=production");
+  }
+  if (isProduction && proxySecret && proxySecret.length < 24) {
+    throw new Error("PRISM_PROXY_SECRET must be at least 24 characters in production");
+  }
+  if (isProduction && allowedOrigins.includes("*") && process.env.PRISM_ALLOWED_ORIGINS !== "*") {
+    throw new Error('Wildcard CORS requires PRISM_ALLOWED_ORIGINS="*" explicitly');
+  }
+
+  return { port, hermesUrl, maxBodyBytes, rateLimitPerMinute, allowedOrigins, proxySecret };
+}
+
+let config;
+try {
+  config = loadConfig();
+} catch (err) {
+  console.error(`Virtual Office Buddy proxy startup failed: ${err.message}`);
+  process.exit(1);
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY ?? process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
 });
 
+const checkChatRateLimit = createRateLimiter(config.rateLimitPerMinute);
 let hermesToken = null;
 let tokenFetchedAt = 0;
 
@@ -17,7 +84,7 @@ async function getHermesToken() {
     return hermesToken;
   }
   try {
-    const res = await fetch(`${HERMES_URL}/`);
+    const res = await fetch(`${config.hermesUrl}/`);
     const html = await res.text();
     const match =
       html.match(/HERMES_SESSION_TOKEN__\s*=\s*"([^"]+)"/) ??
@@ -32,32 +99,66 @@ async function getHermesToken() {
   return hermesToken;
 }
 
-function sendJson(res, status, body) {
-  res.writeHead(status, {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
+function corsHeaders(req) {
+  const origin = getCorsOrigin(req.headers.origin, config.allowedOrigins);
+  if (!origin) return null;
+  return {
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
-  });
-  res.end(JSON.stringify(body));
+    Vary: "Origin",
+  };
+}
+
+function sendJson(req, res, status, body) {
+  const headers = corsHeaders(req);
+  if (!headers) {
+    res.writeHead(403, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Origin not allowed" }));
+    return;
+  }
+  res.writeHead(status, { "Content-Type": "application/json", ...headers });
+  res.end(status === 204 ? "" : JSON.stringify(body));
+}
+
+function sendError(req, res, status, message) {
+  sendJson(req, res, status, { error: message });
+}
+
+function safeErrorMessage(err, fallback) {
+  if (!isProduction && err instanceof Error) return err.message;
+  return fallback;
+}
+
+function requireAuth(req) {
+  if (!config.proxySecret) return;
+  const expected = `Bearer ${config.proxySecret}`;
+  if (req.headers.authorization !== expected) {
+    throw new HttpError(401, "Unauthorized");
+  }
+}
+
+function clientIp(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.trim()) {
+    return forwarded.split(",")[0].trim();
+  }
+  return req.socket.remoteAddress ?? "unknown";
 }
 
 async function readBody(req) {
-  const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  const raw = Buffer.concat(chunks).toString("utf8");
-  return raw ? JSON.parse(raw) : {};
+  return readJsonBody(req, config.maxBodyBytes);
 }
 
 async function proxyHermes(req, res, targetPath, options = {}) {
   const token = await getHermesToken();
   if (!token) {
-    sendJson(res, 503, { error: "Hermes Agent not available" });
+    sendJson(req, res, 503, { error: "Hermes Agent not available" });
     return;
   }
 
   const body = req.method === "GET" ? undefined : JSON.stringify(await readBody(req));
-  const hermesRes = await fetch(`${HERMES_URL}${targetPath}`, {
+  const hermesRes = await fetch(`${config.hermesUrl}${targetPath}`, {
     method: options.method ?? req.method,
     headers: {
       "Content-Type": "application/json",
@@ -66,26 +167,43 @@ async function proxyHermes(req, res, targetPath, options = {}) {
     body,
   });
   const text = await hermesRes.text();
+  const headers = corsHeaders(req);
+  if (!headers) {
+    sendError(req, res, 403, "Origin not allowed");
+    return;
+  }
   res.writeHead(hermesRes.status, {
     "Content-Type": hermesRes.headers.get("content-type") ?? "application/json",
-    "Access-Control-Allow-Origin": "*",
+    ...headers,
   });
   res.end(text);
 }
 
 async function handleChat(req, res) {
+  if (!checkChatRateLimit(clientIp(req))) {
+    sendJson(req, res, 429, { error: "Rate limit exceeded" });
+    return;
+  }
   if (!process.env.OPENROUTER_API_KEY && !process.env.OPENAI_API_KEY) {
-    sendJson(res, 503, { error: "OPENROUTER_API_KEY is not configured" });
+    sendJson(req, res, 503, { error: "OPENROUTER_API_KEY or OPENAI_API_KEY is not configured" });
     return;
   }
 
   const body = await readBody(req);
+  validateChatInput(body);
+
+  const headers = corsHeaders(req);
+  if (!headers) {
+    sendError(req, res, 403, "Origin not allowed");
+    return;
+  }
+
   const message = body.message ?? body.prompt ?? "";
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
-    "Access-Control-Allow-Origin": "*",
+    ...headers,
   });
 
   try {
@@ -100,7 +218,8 @@ async function handleChat(req, res) {
     }
     res.write("data: [DONE]\n\n");
   } catch (err) {
-    const error = err instanceof Error ? err.message : "Chat request failed";
+    console.error("Chat request failed", err);
+    const error = safeErrorMessage(err, "Chat request failed");
     res.write(`data: ${JSON.stringify({ token: `Error: ${error}` })}\n\n`);
     res.write("data: [DONE]\n\n");
   }
@@ -110,9 +229,11 @@ async function handleChat(req, res) {
 const server = http.createServer(async (req, res) => {
   try {
     if (req.method === "OPTIONS") {
-      sendJson(res, 204, {});
+      sendJson(req, res, 204, {});
       return;
     }
+
+    requireAuth(req);
 
     const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
     const path = url.pathname;
@@ -123,15 +244,15 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && path === "/api/hermes/status") {
-      const hermesRes = await fetch(`${HERMES_URL}/api/status`);
-      sendJson(res, hermesRes.status, await hermesRes.json());
+      const hermesRes = await fetch(`${config.hermesUrl}/api/status`);
+      sendJson(req, res, hermesRes.status, await hermesRes.json());
       return;
     }
 
     if (req.method === "GET" && path === "/api/hermes/pty-token") {
       const token = await getHermesToken();
-      if (!token) sendJson(res, 503, { error: "Hermes Agent not available" });
-      else sendJson(res, 200, { token, wsUrl: `ws://localhost:9119/api/pty` });
+      if (!token) sendJson(req, res, 503, { error: "Hermes Agent not available" });
+      else sendJson(req, res, 200, { token, wsUrl: `ws://localhost:9119/api/pty` });
       return;
     }
 
@@ -162,16 +283,16 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && path === "/api/hermes/crons") {
       const token = await getHermesToken();
       if (!token) {
-        sendJson(res, 503, { error: "Hermes Agent not available" });
+        sendJson(req, res, 503, { error: "Hermes Agent not available" });
         return;
       }
-      const cronsRes = await fetch(`${HERMES_URL}/api/crons`, {
+      const cronsRes = await fetch(`${config.hermesUrl}/api/crons`, {
         headers: { "X-Hermes-Session-Token": token },
       }).catch(() => null);
-      if (cronsRes?.ok) sendJson(res, cronsRes.status, await cronsRes.json());
+      if (cronsRes?.ok) sendJson(req, res, cronsRes.status, await cronsRes.json());
       else {
-        const statusRes = await fetch(`${HERMES_URL}/api/status`);
-        sendJson(res, statusRes.status, await statusRes.json());
+        const statusRes = await fetch(`${config.hermesUrl}/api/status`);
+        sendJson(req, res, statusRes.status, await statusRes.json());
       }
       return;
     }
@@ -180,12 +301,17 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    sendJson(res, 404, { error: "Not found" });
+    sendJson(req, res, 404, { error: "Not found" });
   } catch (err) {
-    sendJson(res, 500, { error: err instanceof Error ? err.message : "Proxy error" });
+    const status = err instanceof HttpError ? err.status : 500;
+    const message =
+      err instanceof HttpError ? err.message : safeErrorMessage(err, "Proxy request failed");
+    if (status >= 500) console.error("Proxy request failed", err);
+    sendError(req, res, status, message);
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Prism proxy listening on http://localhost:${PORT}`);
+server.listen(config.port, () => {
+  console.log(`Virtual Office Buddy proxy listening on http://localhost:${config.port}`);
+  console.log(`Allowed origins: ${config.allowedOrigins.join(", ")}`);
 });

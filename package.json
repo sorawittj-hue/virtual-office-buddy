@@ -1,5 +1,5 @@
 {
-  "name": "prism-hermes-dashboard",
+  "name": "virtual-office-buddy",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "telegram": "node --env-file=.env telegram-bridge.js"
+    "telegram": "node --env-file=.env telegram-bridge.js",
+    "test": "node tests/server-utils.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",

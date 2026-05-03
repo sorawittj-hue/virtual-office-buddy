@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "=== Prism Dashboard — One-click Installer ==="
+echo "=== Virtual Office Buddy One-click Installer ==="
 echo ""
 
 # 1. Clone
@@ -52,7 +52,7 @@ if command -v systemctl &>/dev/null; then
   sudo systemctl daemon-reload
   sudo systemctl enable --now prism-dashboard
   echo ""
-  echo "✅ ติดตั้งเสร็จแล้ว! Prism กำลังรันเป็น systemd service"
+  echo "Installed! Virtual Office Buddy is running as a systemd service"
   echo "   http://localhost:3000"
   echo ""
   echo "   ดู logs: sudo journalctl -u prism-dashboard -f"

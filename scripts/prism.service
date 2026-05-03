@@ -1,4 +1,4 @@
-# systemd service file for Prism Dashboard (self-hosted, no Docker)
+# systemd service file for Virtual Office Buddy (self-hosted, no Docker)
 #
 # Install:
 #   sudo cp scripts/prism.service /etc/systemd/system/prism-dashboard.service
@@ -10,7 +10,7 @@
 #   sudo journalctl -u prism-dashboard -f
 
 [Unit]
-Description=Prism — Dashboard for Hermes Agent
+Description=Virtual Office Buddy
 After=network.target
 
 [Service]

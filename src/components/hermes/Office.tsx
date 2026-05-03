@@ -44,7 +44,7 @@ export function Office() {
               <div>
                 <h1 className="brand-wordmark text-xl leading-tight text-foreground">Office</h1>
                 <p className="text-xs font-medium text-muted-foreground">
-                  Prism workspace command center
+                  Virtual Office Buddy command center
                 </p>
               </div>
               <span className="hidden text-xs text-muted-foreground">Virtual Workspace</span>

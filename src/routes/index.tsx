@@ -5,7 +5,7 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Prism · Office" },
+      { title: "Virtual Office Buddy | Office" },
       {
         name: "description",
         content: "3D isometric office scene — watch your Hermes Agent work in real time.",

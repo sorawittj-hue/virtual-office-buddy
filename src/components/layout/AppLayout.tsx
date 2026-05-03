@@ -85,9 +85,11 @@ function Sidebar() {
             <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent" />
           </div>
           <div>
-            <div className="brand-wordmark text-[15px] leading-tight text-white">Prism</div>
+            <div className="brand-wordmark text-[15px] leading-tight text-white">
+              Virtual Office Buddy
+            </div>
             <div className="text-[10px] font-medium leading-tight text-white/45">
-              Hermes Office OS
+              Hermes workspace
             </div>
           </div>
         </div>
@@ -184,10 +186,13 @@ function useBrowserNotifications() {
       if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
       if (document.visibilityState === "visible") return;
       const isError = event.type === "task-error";
-      new Notification(isError ? "Prism — Task Failed" : "Prism — Task Complete", {
-        body: isError ? event.error : event.result.slice(0, 100) || "Done",
-        icon: "/favicon.svg",
-      });
+      new Notification(
+        isError ? "Virtual Office Buddy - Task Failed" : "Virtual Office Buddy - Task Complete",
+        {
+          body: isError ? event.error : event.result.slice(0, 100) || "Done",
+          icon: "/favicon.svg",
+        },
+      );
     });
   }, [service]);
 }

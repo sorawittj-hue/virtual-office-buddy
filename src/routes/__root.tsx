@@ -9,11 +9,11 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Prism — Dashboard for Hermes Agent" },
+      { title: "Virtual Office Buddy" },
       {
         name: "description",
         content:
-          "Prism — The open-source dashboard for Hermes Agent. 17 LLM providers, 25 platform integrations, built-in Guardrails.",
+          "Virtual Office Buddy is a local-first dashboard for a Hermes-style AI office assistant.",
       },
     ],
     links: [
