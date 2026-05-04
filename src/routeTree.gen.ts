@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as Char91indexChar93RouteImport } from './routes/[index]'
 import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -24,6 +25,11 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 
+const Char91indexChar93Route = Char91indexChar93RouteImport.update({
+  id: '/index',
+  path: '/index',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ToolsRoute = ToolsRouteImport.update({
   id: '/tools',
   path: '/tools',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AgentsRoute
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
+  '/index': typeof Char91indexChar93Route
   '/kanban': typeof KanbanRoute
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/agents': typeof AgentsRoute
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
+  '/index': typeof Char91indexChar93Route
   '/kanban': typeof KanbanRoute
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/agents': typeof AgentsRoute
   '/chat': typeof ChatRoute
   '/gateway': typeof GatewayRoute
+  '/index': typeof Char91indexChar93Route
   '/kanban': typeof KanbanRoute
   '/memory': typeof MemoryRoute
   '/models': typeof ModelsRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/gateway'
+    | '/index'
     | '/kanban'
     | '/memory'
     | '/models'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/gateway'
+    | '/index'
     | '/kanban'
     | '/memory'
     | '/models'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/chat'
     | '/gateway'
+    | '/index'
     | '/kanban'
     | '/memory'
     | '/models'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   AgentsRoute: typeof AgentsRoute
   ChatRoute: typeof ChatRoute
   GatewayRoute: typeof GatewayRoute
+  Char91indexChar93Route: typeof Char91indexChar93Route
   KanbanRoute: typeof KanbanRoute
   MemoryRoute: typeof MemoryRoute
   ModelsRoute: typeof ModelsRoute
@@ -214,6 +227,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/index': {
+      id: '/index'
+      path: '/index'
+      fullPath: '/index'
+      preLoaderRoute: typeof Char91indexChar93RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tools': {
       id: '/tools'
       path: '/tools'
@@ -320,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentsRoute: AgentsRoute,
   ChatRoute: ChatRoute,
   GatewayRoute: GatewayRoute,
+  Char91indexChar93Route: Char91indexChar93Route,
   KanbanRoute: KanbanRoute,
   MemoryRoute: MemoryRoute,
   ModelsRoute: ModelsRoute,
